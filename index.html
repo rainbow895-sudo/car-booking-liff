@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>公務車借用申請</title>
+<!-- 請將 YOUR_LIFF_ID 替換為您的 LIFF App ID -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f0;min-height:100vh}
+  .app{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column}
+
+  /* Header */
+  .header{background:#06C755;padding:16px 20px;color:#fff;display:flex;align-items:center;gap:10px}
+  .header-icon{width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .header h1{font-size:17px;font-weight:700;letter-spacing:.3px}
+  .header p{font-size:12px;opacity:.85;margin-top:2px}
+
+  /* Progress */
+  .progress{height:3px;background:#e8e8e8}
+  .progress-bar{height:100%;background:#06C755;transition:width .4s ease;width:33%}
+
+  /* Body */
+  .form-body{padding:20px;flex:1;overflow-y:auto;padding-bottom:100px}
+  .section-label{font-size:11px;font-weight:700;color:#06C755;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px}
+
+  /* Fields */
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;color:#555;margin-bottom:6px;font-weight:500}
+  .field label .req{color:#e53935;margin-left:2px}
+  .field input,
+  .field select,
+  .field textarea{
+    width:100%;padding:12px 14px;
+    border:1.5px solid #e0e0e0;border-radius:10px;
+    font-size:15px;font-family:inherit;
+    background:#fafafa;color:#222;
+    outline:none;transition:border-color .2s,background .2s;
+    -webkit-appearance:none;appearance:none
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:#06C755;background:#fff}
+  .field textarea{resize:none;height:76px;line-height:1.5}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  /* Stepper */
+  .stepper{display:flex;align-items:center;border:1.5px solid #e0e0e0;border-radius:10px;overflow:hidden;background:#fafafa}
+  .stepper button{width:48px;height:48px;border:none;background:none;font-size:22px;color:#06C755;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .stepper button:active{background:#f0faf3}
+  .stepper span{flex:1;text-align:center;font-size:16px;font-weight:600;color:#222}
+
+
+
+  /* Steps */
+  .step{display:none}
+  .step.active{display:block}
+
+  /* Footer */
+  .footer{position:fixed;bottom:0;left:0;right:0;padding:14px 20px 24px;background:#fff;border-top:1px solid #f0f0f0;max-width:480px;margin:0 auto}
+  .step-nav{display:flex;gap:10px}
+  .btn-back{flex:1;padding:14px;background:#f5f5f0;color:#555;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer}
+  .btn-next{flex:2;padding:14px;background:#06C755;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .btn-next:active{opacity:.85}
+
+  /* Info hint */
+  .info-hint{font-size:12px;color:#06C755;margin-top:8px;display:flex;align-items:center;gap:4px;line-height:1.5}
+  .info-hint svg{flex-shrink:0}
+
+  /* Success */
+  .success{display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 32px;text-align:center;flex:1}
+  .success.show{display:flex}
+  .success-icon{width:80px;height:80px;background:#e8f8ee;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+  .success h2{font-size:22px;font-weight:700;color:#222;margin-bottom:10px}
+  .success p{font-size:14px;color:#888;line-height:1.8}
+
+  /* Plate input (auto-appear) */
+  .plate-section{display:none;margin-top:16px;padding:16px;background:#fffde7;border-radius:12px;border:1.5px solid #ffe082}
+  .plate-section.show{display:block}
+  .plate-section p{font-size:13px;color:#795548;margin-bottom:10px;font-weight:500}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="header">
+    <div class="header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+        <rect x="1" y="3" width="15" height="13" rx="2"/>
+        <path d="M16 8h4l3 5v3h-7"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <div>
+      <h1>公務車借用申請</h1>
+      <p id="step-hint">步驟 1／3 — 填寫基本資料</p>
+    </div>
+  </div>
+  <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+
+  <div class="form-body">
+
+    <!-- Step 1: 申請人資料 -->
+    <div class="step active" id="step1">
+      <div class="section-label">申請人資料</div>
+      <div class="field">
+        <label>工號 <span class="req">*</span></label>
+        <input type="text" id="emp-id" placeholder="例：A12345">
+      </div>
+      <div class="field">
+        <label>駕駛人姓名 <span class="req">*</span></label>
+        <input type="text" id="driver" placeholder="請輸入中文姓名">
+      </div>
+      <div class="field">
+        <label>所屬部門 <span class="req">*</span></label>
+        <input type="text" id="dept" placeholder="例：行政部">
+      </div>
+    </div>
+
+    <!-- Step 2: 用車時間 -->
+    <div class="step" id="step2">
+      <div class="section-label">用車時間與人數</div>
+      <div class="field">
+        <label>借用日期 <span class="req">*</span></label>
+        <input type="date" id="borrow-date">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>出發時間 <span class="req">*</span></label>
+          <input type="time" id="start-time">
+        </div>
+        <div class="field">
+          <label>預計返回 <span class="req">*</span></label>
+          <input type="time" id="end-time">
+        </div>
+      </div>
+      <div class="field">
+        <label>乘車人數（含駕駛）</label>
+        <div class="stepper">
+          <button type="button" onclick="adj(-1)">−</button>
+          <span id="pax-val">1</span>
+          <button type="button" onclick="adj(1)">＋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: 事由與車牌 -->
+    <div class="step" id="step3">
+      <div class="section-label">借用事由</div>
+      <div class="field">
+        <label>借用事由 <span class="req">*</span></label>
+        <input type="text" id="reason-input" placeholder="例：業務拜訪、開會、採購…">
+      </div>
+      <div class="field">
+        <label>目的地 <span class="req">*</span></label>
+        <input type="text" id="location" placeholder="例：台南市政府">
+      </div>
+      <div class="field">
+        <label>備註</label>
+        <textarea id="note" placeholder="其他說明（選填）"></textarea>
+      </div>
+
+      <!-- 若 30 分鐘內用車，自動出現車牌欄位 -->
+      <div class="plate-section" id="plate-section">
+        <p>⚡ 您的用車時間在 30 分鐘內，請直接填入車牌：</p>
+        <div class="field" style="margin:0">
+          <input type="text" id="plate-input" placeholder="例：ABC-1234（英文大寫）" style="text-transform:uppercase">
+        </div>
+      </div>
+
+      <div class="info-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06C755" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        若用車時間在申請後 30 分鐘內，系統將讓您自行填入車牌
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div class="success" id="success-view">
+      <div class="success-icon">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#06C755" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>申請已送出！</h2>
+      <p>您的借車申請已成功登記<br>管理員將盡快為您安排車輛<br>派車後將透過 LINE 訊息通知您</p>
+    </div>
+
+  </div><!-- /form-body -->
+
+  <div class="footer" id="footer">
+    <div id="nav1" class="step-nav">
+      <button class="btn-next" style="flex:1" onclick="goStep(2)">下一步 →</button>
+    </div>
+    <div id="nav2" class="step-nav" style="display:none">
+      <button class="btn-back" onclick="goStep(1)">← 上一步</button>
+      <button class="btn-next" onclick="goStep(3)">下一步 →</button>
+    </div>
+    <div id="nav3" class="step-nav" style="display:none">
+      <button class="btn-back" onclick="goStep(2)">← 上一步</button>
+      <button class="btn-next" onclick="submitForm()" id="submit-btn">送出申請</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ==========================================
+// 設定區 — 請修改這兩個值
+// ==========================================
+const LIFF_ID = 'YOUR_LIFF_ID';           // 替換為您的 LIFF App ID
+const GAS_URL = 'YOUR_GAS_WEB_APP_URL';   // 替換為您的 GAS Web App URL
+// ==========================================
+
+let pax = 1;
+let currentStep = 1;
+let userId = '';
+
+// 初始化 LIFF
+async function initLiff() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) liff.login();
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    // 自動填入已儲存的工號、部門（如有）
+    const saved = JSON.parse(localStorage.getItem('car_user_prefs') || '{}');
+    if (saved.empId) document.getElementById('emp-id').value = saved.empId;
+    if (saved.driver) document.getElementById('driver').value = saved.driver;
+    if (saved.dept) document.getElementById('dept').value = saved.dept;
+  } catch(e) {
+    console.log('LIFF init failed:', e);
+    // 本機測試模式
+    userId = 'U_test_preview';
+  }
+}
+
+// 日期下限設為今天
+document.getElementById('borrow-date').min = new Date().toISOString().split('T')[0];
+
+// 乘車人數調整
+function adj(d) {
+  pax = Math.max(1, Math.min(15, pax + d));
+  document.getElementById('pax-val').textContent = pax;
+}
+
+// 步驟切換
+function goStep(n) {
+  if (n > currentStep && !validate(currentStep)) return;
+  document.getElementById('step' + currentStep).classList.remove('active');
+  document.getElementById('nav' + currentStep).style.display = 'none';
+  currentStep = n;
+  document.getElementById('step' + n).classList.add('active');
+  document.getElementById('nav' + n).style.display = 'flex';
+
+  const hints = ['填寫基本資料', '設定用車時間', '說明借用事由'];
+  document.getElementById('step-hint').textContent = '步驟 ' + n + '／3 — ' + hints[n - 1];
+  document.getElementById('progress-bar').style.width = (n / 3 * 100) + '%';
+
+  // 進入步驟3時，檢查是否需要顯示車牌欄
+  if (n === 3) checkPlateNeeded();
+}
+
+// 檢查用車時間是否在 30 分鐘內
+function checkPlateNeeded() {
+  const dateVal = document.getElementById('borrow-date').value;
+  const timeVal = document.getElementById('start-time').value;
+  if (!dateVal || !timeVal) return;
+  const borrowTime = new Date(dateVal + 'T' + timeVal);
+  const now = new Date();
+  const diffMin = (borrowTime - now) / 60000;
+  // -5 ~ 30 分鐘內視為即時用車
+  const isImmediate = diffMin > -5 && diffMin < 30;
+  document.getElementById('plate-section').classList.toggle('show', isImmediate);
+}
+
+// 驗證每步
+function validate(s) {
+  if (s === 1) {
+    if (!document.getElementById('emp-id').value.trim()) { alert('請輸入工號'); return false; }
+    if (!document.getElementById('driver').value.trim()) { alert('請輸入駕駛人姓名'); return false; }
+    if (!document.getElementById('dept').value) { alert('請選擇部門'); return false; }
+  }
+  if (s === 2) {
+    if (!document.getElementById('borrow-date').value) { alert('請選擇借用日期'); return false; }
+    if (!document.getElementById('start-time').value) { alert('請輸入出發時間'); return false; }
+    if (!document.getElementById('end-time').value) { alert('請輸入預計返回時間'); return false; }
+  }
+  if (s === 3) {
+    const r = document.getElementById('reason-input').value.trim();
+    if (!r) { alert('請輸入借用事由'); return false; }
+    if (!document.getElementById('location').value.trim()) { alert('請輸入目的地'); return false; }
+  }
+  return true;
+}
+
+// 送出申請
+async function submitForm() {
+  if (!validate(3)) return;
+
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.textContent = '送出中...';
+  submitBtn.disabled = true;
+
+  const dateVal = document.getElementById('borrow-date').value;
+  const timeVal = document.getElementById('start-time').value;
+  const borrowTime = new Date(dateVal + 'T' + timeVal);
+  const now = new Date();
+  const diffMin = (borrowTime - now) / 60000;
+  const isImmediate = diffMin > -5 && diffMin < 30;
+
+  const finalReason = document.getElementById('reason-input').value.trim();
+
+  const plateInput = document.getElementById('plate-input').value.trim().toUpperCase();
+
+  // 儲存使用者偏好（下次自動帶入）
+  localStorage.setItem('car_user_prefs', JSON.stringify({
+    empId: document.getElementById('emp-id').value.trim(),
+    driver: document.getElementById('driver').value.trim(),
+    dept: document.getElementById('dept').value.trim()
+  }));
+
+  const payload = {
+    source: 'liff',
+    userId: userId,
+    empId: document.getElementById('emp-id').value.trim(),
+    driver: document.getElementById('driver').value.trim(),
+    dept: document.getElementById('dept').value,
+    borrowDate: dateVal,
+    startTime: timeVal,
+    endTime: document.getElementById('end-time').value,
+    pax: pax,
+    reason: finalReason,
+    location: document.getElementById('location').value.trim(),
+    note: document.getElementById('note').value.trim(),
+    plate: (isImmediate && plateInput) ? plateInput : '',
+    status: (isImmediate && plateInput) ? '已派車(自行輸入)' : '待派車'
+  };
+
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    // 顯示成功畫面
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('nav3').style.display = 'none';
+    document.getElementById('success-view').classList.add('show');
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('step-hint').textContent = '申請完成';
+    document.getElementById('footer').style.display = 'none';
+
+    // 3 秒後關閉 LIFF
+    setTimeout(() => {
+      if (liff.isInClient()) liff.closeWindow();
+    }, 3000);
+
+  } catch(e) {
+    alert('送出失敗，請稍後再試。');
+    submitBtn.textContent = '送出申請';
+    submitBtn.disabled = false;
+  }
+}
+
+initLiff();
+</script>
+</body>
+</html>
