@@ -735,7 +735,7 @@
        * 預覽時保持 true。
        * 正式串接 GAS 時改成 false。
        */
-      PREVIEW_MODE: false,
+      PREVIEW_MODE: true,
 
       GAS_URL:
         "https://script.google.com/macros/s/AKfycbwz1QAtyd7k9ErQZr1ICx6xS-4ieeulPmKOtEf4w4uUE8CyKAtQCbhD5BXP4YzVoKWl/exec",
@@ -2069,6 +2069,13 @@
         return;
       }
 
+      // 正式模式必須先完成 LIFF 登入並取得 LINE userId，避免將空白 ID 寫入申請紀錄。
+      const lineId = state.user?.lineId || "";
+      if (!CONFIG.PREVIEW_MODE && !lineId) {
+        showMessage("尚未取得 LINE 使用者 ID，請重新從 LINE 開啟並登入後再送出。", "danger");
+        return;
+      }
+
       const canInputPlate = isWithinThirtyMinutes(date, startTime);
 
       const plate = canInputPlate
@@ -2076,6 +2083,9 @@
         : "";
 
       const payload = {
+        // 此值由 LIFF 登入時 liff.getProfile().userId 設定於 state.user.lineId。
+        lineId,
+
         employeeNo:
           document.getElementById("f-employeeNo").value.trim(),
 
