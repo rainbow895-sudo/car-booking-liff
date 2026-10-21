@@ -1,2316 +1,628 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>借車系統</title>
+<script>
+// ==========================================
+// 設定區
+// ==========================================
+const LIFF_ID = '2007826582-3tKuGAUu';
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+const GAS_URL =
+  'https://script.google.com/macros/s/AKfycbwz1QAtyd7k9ErQZr1ICx6xS-4ieeulPmKOtEf4w4uUE8CyKAtQCbhD5BXP4YzVoKWl/exec';
 
-  <style>
-    :root {
-      --primary: #718da3;
-      --primary-dark: #58758c;
-      --primary-light: #e6edf1;
-      --sidebar: #5d788b;
-      --bg: #f3f5f6;
-      --card: #ffffff;
-      --text: #3f4f5a;
-      --muted: #7d8991;
-      --border: #d9e0e4;
-      --success: #789989;
-      --warning: #b3986d;
-      --danger: #aa7777;
-    }
+const LINE_LOGIN_CHANNEL_ID =
+  '2007826766';
 
-    * {
-      box-sizing: border-box;
-    }
+const LINE_LOGIN_REDIRECT_URI =
+  GAS_URL;
 
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Noto Sans TC",
-        Arial,
-        sans-serif;
-    }
+// ==========================================
+// 全域變數
+// ==========================================
+let pax = 1;
+let currentStep = 1;
+let userId = '';
+let liffReady = false;
 
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
+// ==========================================
+// 產生每位使用者專屬的 localStorage Key
+// ==========================================
+function getUserPrefsKey() {
+  if (userId) {
+    return 'car_user_prefs_' + userId;
+  }
 
-    button {
-      cursor: pointer;
-    }
-
-    img {
-      max-width: 100%;
-    }
-
-    code {
-      padding: 2px 5px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, .06);
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* ---------- 頂部 ---------- */
-
-    .topbar {
-      height: 68px;
-      padding: 0 26px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      color: var(--text);
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .brand-logo {
-      width: 46px;
-      height: 46px;
-      object-fit: contain;
-      border-radius: 50%;
-      background: #fff;
-    }
-
-    .user-area {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    /* ---------- 版面 ---------- */
-
-    .layout {
-      display: flex;
-      min-height: calc(100vh - 68px);
-    }
-
-    .sidebar {
-      width: 235px;
-      flex-shrink: 0;
-      padding: 22px 14px;
-      background: var(--sidebar);
-    }
-
-    .sidebar-label {
-      margin: 8px 12px 10px;
-      color: #d9e3e9;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .nav-button {
-      width: 100%;
-      padding: 12px 13px;
-      margin-bottom: 5px;
-      border: 0;
-      border-radius: 8px;
-      color: #eef3f6;
-      background: transparent;
-      text-align: left;
-      font-weight: 600;
-    }
-
-    .nav-button:hover,
-    .nav-button.active {
-      background: rgba(255, 255, 255, .2);
-    }
-
-    .main {
-      width: 100%;
-      max-width: 1500px;
-      margin: 0 auto;
-      padding: 30px;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 18px;
-      margin-bottom: 22px;
-    }
-
-    .page-title {
-      margin: 0;
-      font-size: 28px;
-    }
-
-    .page-subtitle {
-      margin-top: 6px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    /* ---------- 卡片與表單 ---------- */
-
-    .card {
-      padding: 23px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--card);
-      box-shadow: 0 6px 20px rgba(65, 82, 95, .05);
-    }
-
-    .card + .card {
-      margin-top: 18px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 16px;
-    }
-
-    .grid-2 {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .grid-3 {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .grid-4 {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    label {
-      display: block;
-      margin-bottom: 7px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #cfd9de;
-      border-radius: 8px;
-      color: var(--text);
-      background: #fff;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      outline: 3px solid rgba(113, 141, 163, .2);
-      border-color: var(--primary);
-    }
-
-    textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    
-    .form-field-compact {
-  margin-top: 16px;
+  return 'car_user_prefs';
 }
 
-.form-field-compact input {
-  min-height: 44px;
+// ==========================================
+// 將資料填入表單
+// ==========================================
+function applySavedUserData(saved) {
+  if (!saved) return;
+
+  const empIdInput = document.getElementById('emp-id');
+  const driverInput = document.getElementById('driver');
+  const deptInput = document.getElementById('dept');
+
+  if (saved.empId && empIdInput && !empIdInput.value) {
+    empIdInput.value = saved.empId;
+  }
+
+  if (saved.driver && driverInput && !driverInput.value) {
+    driverInput.value = saved.driver;
+  }
+
+  if (saved.dept && deptInput && !deptInput.value) {
+    deptInput.value = saved.dept;
+  }
 }
 
-.plate-section {
-  margin-top: 18px;
+// ==========================================
+// 頁面一開啟時，先載入一般暫存資料
+// 即使 LIFF 還沒有完成，也可以先帶入工號、姓名、部門
+// ==========================================
+function loadGeneralSavedUserData() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem('car_user_prefs') || '{}'
+    );
+
+    applySavedUserData(saved);
+
+  } catch (error) {
+    console.error('載入一般暫存資料失敗:', error);
+  }
 }
 
-.plate-section .page-subtitle {
-  margin-top: 6px;
-  line-height: 1.6;
+// ==========================================
+// 取得 LINE ID 後，載入該 LINE 使用者專屬資料
+// ==========================================
+function loadLineUserData() {
+  if (!userId) return;
+
+  try {
+    const key = getUserPrefsKey();
+    const saved = JSON.parse(
+      localStorage.getItem(key) || '{}'
+    );
+
+    applySavedUserData(saved);
+
+  } catch (error) {
+    console.error('載入 LINE 使用者資料失敗:', error);
+  }
 }
 
-    .button {
-      padding: 10px 16px;
-      border: 0;
-      border-radius: 8px;
-      font-weight: 700;
-      transition: .15s;
+// ==========================================
+// 儲存工號、姓名、部門
+// 同時儲存一般資料及 LINE 專屬資料
+// ==========================================
+function saveUserData() {
+  const data = {
+    empId: document.getElementById('emp-id').value.trim(),
+    driver: document.getElementById('driver').value.trim(),
+    dept: document.getElementById('dept').value.trim()
+  };
+
+  try {
+    // 一般資料：LIFF 尚未取得 LINE ID 時，下次仍可先帶入
+    localStorage.setItem(
+      'car_user_prefs',
+      JSON.stringify(data)
+    );
+
+    // LINE 專屬資料：避免不同使用者共用同一組資料
+    if (userId) {
+      localStorage.setItem(
+        'car_user_prefs_' + userId,
+        JSON.stringify(data)
+      );
     }
 
-    .button:hover {
-      transform: translateY(-1px);
+  } catch (error) {
+    console.error('儲存使用者資料失敗:', error);
+  }
+}
+
+// ==========================================
+// 判斷 LINE userId 是否有效
+// 正常 LINE userId 會以 U 開頭，後面為英數字
+// ==========================================
+function isValidLineUserId(id) {
+  return typeof id === 'string' &&
+    /^U[0-9a-z]+$/i.test(id) &&
+    id !== 'U_test_preview';
+}
+
+// ==========================================
+// 初始化 LIFF
+// ==========================================
+async function initLiff() {
+  // 先載入暫存資料
+  // 這樣即使 LIFF 尚未登入，工號、姓名、部門仍可先自動填入
+  loadGeneralSavedUserData();
+
+  try {
+    console.log('開始初始化 LIFF');
+
+    await liff.init({
+      liffId: LIFF_ID
+    });
+
+    console.log('LIFF 初始化完成');
+    console.log('是否在 LINE App 內:', liff.isInClient());
+    console.log('目前是否已登入:', liff.isLoggedIn());
+
+    // 尚未登入時，導向 LINE Login
+    // 一定要 return，避免尚未登入完成就執行 getProfile()
+    if (!liff.isLoggedIn()) {
+      console.log('尚未登入，開始 LINE Login');
+      liff.login();
+      return;
     }
 
-    .button-primary {
-      color: #fff;
-      background: var(--primary);
+    // 取得 LINE 使用者資料
+    const profile = await liff.getProfile();
+
+    if (!profile || !profile.userId) {
+      throw new Error('LINE Profile 中沒有 userId');
     }
 
-    .button-primary:hover {
-      background: var(--primary-dark);
+    userId = profile.userId;
+
+    if (!isValidLineUserId(userId)) {
+      throw new Error('取得到的 LINE userId 格式無效');
     }
 
-    .button-secondary {
-      color: #53636d;
-      background: #e7edef;
+    liffReady = true;
+
+    console.log('LINE userId 取得成功:', userId);
+
+    // 取得 LINE ID 後，載入此使用者專屬資料
+    loadLineUserData();
+
+  } catch (error) {
+    console.error('LIFF 初始化或取得 LINE ID 失敗:', error);
+
+    userId = '';
+    liffReady = false;
+
+    // 不清除已經自動填入的工號、姓名、部門
+    // 但不能使用測試 ID 送出正式申請
+    alert(
+      '目前無法確認您的 LINE 身分。\n\n' +
+      '工號、姓名和部門資料仍可填寫，' +
+      '但請重新從 LINE 官方帳號開啟借車功能後再送出。'
+    );
+  }
+}
+
+// ==========================================
+// 日期下限設為今天
+// ==========================================
+document.getElementById('borrow-date').min =
+  new Date().toISOString().split('T')[0];
+
+// ==========================================
+// 乘車人數調整
+// ==========================================
+function adj(d) {
+  pax = Math.max(1, Math.min(15, pax + d));
+
+  document.getElementById('pax-val').textContent = pax;
+}
+
+// ==========================================
+// 步驟切換
+// ==========================================
+function goStep(n) {
+  if (n > currentStep && !validate(currentStep)) {
+    return;
+  }
+
+  document
+    .getElementById('step' + currentStep)
+    .classList.remove('active');
+
+  document
+    .getElementById('nav' + currentStep)
+    .style.display = 'none';
+
+  currentStep = n;
+
+  document
+    .getElementById('step' + n)
+    .classList.add('active');
+
+  document
+    .getElementById('nav' + n)
+    .style.display = 'flex';
+
+  const hints = [
+    '填寫基本資料',
+    '設定用車時間',
+    '說明借用事由'
+  ];
+
+  document.getElementById('step-hint').textContent =
+    '步驟 ' + n + '/3 — ' + hints[n - 1];
+
+  document.getElementById('progress-bar').style.width =
+    (n / 3 * 100) + '%';
+
+  // 進入第三步時，檢查是否需要顯示車牌欄位
+  if (n === 3) {
+    checkPlateNeeded();
+  }
+}
+
+// ==========================================
+// 檢查用車時間是否在 30 分鐘內
+// ==========================================
+function checkPlateNeeded() {
+  const dateVal =
+    document.getElementById('borrow-date').value;
+
+  const timeVal =
+    document.getElementById('start-time').value;
+
+  if (!dateVal || !timeVal) {
+    return;
+  }
+
+  const borrowTime =
+    new Date(dateVal + 'T' + timeVal);
+
+  const now = new Date();
+
+  const diffMin =
+    (borrowTime - now) / 60000;
+
+  // -5 到 30 分鐘內，視為即時用車
+  const isImmediate =
+    diffMin > -5 && diffMin < 30;
+
+  document
+    .getElementById('plate-section')
+    .classList.toggle('show', isImmediate);
+}
+
+// ==========================================
+// 表單欄位驗證
+// ==========================================
+function validate(s) {
+  if (s === 1) {
+    if (!document.getElementById('emp-id').value.trim()) {
+      alert('請輸入工號');
+      return false;
     }
 
-    .button-light {
-      color: var(--primary-dark);
-      background: var(--primary-light);
+    if (!document.getElementById('driver').value.trim()) {
+      alert('請輸入駕駛人姓名');
+      return false;
     }
 
-    .button-success {
-      color: #fff;
-      background: var(--success);
+    if (!document.getElementById('dept').value.trim()) {
+      alert('請輸入部門');
+      return false;
+    }
+  }
+
+  if (s === 2) {
+    if (!document.getElementById('borrow-date').value) {
+      alert('請選擇借用日期');
+      return false;
     }
 
-    .button-danger {
-      color: #fff;
-      background: var(--danger);
+    if (!document.getElementById('start-time').value) {
+      alert('請輸入出發時間');
+      return false;
     }
 
-    /* ---------- 訊息 ---------- */
+    if (!document.getElementById('end-time').value) {
+      alert('請輸入預計返回時間');
+      return false;
+    }
+  }
 
-    .notice {
-      margin: 14px 0;
-      padding: 12px 14px;
-      border-radius: 9px;
-      line-height: 1.65;
-      font-size: 14px;
+  if (s === 3) {
+    const reason =
+      document.getElementById('reason-input').value.trim();
+
+    if (!reason) {
+      alert('請輸入借用事由');
+      return false;
     }
 
-    .notice-info {
-      color: #496779;
-      background: #eaf1f4;
+    if (!document.getElementById('location').value.trim()) {
+      alert('請輸入目的地');
+      return false;
     }
+  }
 
-    .notice-warning {
-      color: #826d4c;
-      background: #f6f0e4;
-    }
+  return true;
+}
 
-    .notice-success {
-      color: #52735e;
-      background: #eaf2ed;
-    }
+// ==========================================
+// 送出申請
+// ==========================================
+async function submitForm() {
+  // 先確認第三步資料
+  if (!validate(3)) {
+    return;
+  }
 
-    .notice-danger {
-      color: #8e5d5d;
-      background: #f5eaea;
-    }
+  // 送出前強制確認有效 LINE ID
+  // 不再使用 U_test_preview
+ if (!liffReady || !isValidLineUserId(userId)) {
+  const confirmed = confirm(
+    '提醒：目前未取得您的 LINE 使用者 ID。\n\n' +
+    '仍可送出借車申請，但可能會有以下影響：\n' +
+    '1. 管理員可能無法透過 LINE 通知您\n' +
+    '2. 派車通知可能無法送達\n' +
+    '3. 回報里程按鈕可能無法使用\n\n' +
+    '是否仍要送出？'
+  );
 
-    /* ---------- 注意事項 ---------- */
+  if (!confirmed) {
+    return;
+  }
+}
 
-    .notice-card {
-      margin-top: 18px;
-    }
+  const submitBtn =
+    document.getElementById('submit-btn');
 
-    .notice-card h3 {
-      margin-top: 0;
-      color: var(--primary-dark);
-    }
+  submitBtn.textContent = '送出中...';
+  submitBtn.disabled = true;
 
-    .notice-list {
-      margin: 0;
-      padding-left: 23px;
-    }
+  const dateVal =
+    document.getElementById('borrow-date').value;
 
-    .notice-list li {
-      margin: 7px 0;
-      line-height: 1.7;
-    }
+  const timeVal =
+    document.getElementById('start-time').value;
 
-    .notice-empty {
-      margin: 0;
-    }
+  const borrowTime =
+    new Date(dateVal + 'T' + timeVal);
 
-    /* ---------- 狀態 ---------- */
+  const now = new Date();
 
-    .status {
-      display: inline-flex;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 800;
-    }
+  const diffMin =
+    (borrowTime - now) / 60000;
 
-    .status-wait {
-      color: #806844;
-      background: #f4ead8;
-    }
+  const isImmediate =
+    diffMin > -5 && diffMin < 30;
 
-    .status-assigned {
-      color: #506f85;
-      background: #e2edf2;
-    }
+  const finalReason =
+    document.getElementById('reason-input').value.trim();
 
-    .status-done {
-      color: #52735e;
-      background: #e3efe7;
-    }
+  const plateInput =
+    document.getElementById('plate-input').value
+      .trim()
+      .toUpperCase();
 
-    .status-cancelled {
-      color: #8c5d5d;
-      background: #f3e4e4;
-    }
+  // 儲存下次自動帶入的資料
+  saveUserData();
 
-    .empty {
-      padding: 34px 10px;
-      color: var(--muted);
-      text-align: center;
-    }
+  const payload = {
+    source: 'liff',
 
-    /* ---------- 首頁 ---------- */
+    // 真正的 LINE userId
+    userId: userId,
 
-    .hero {
-      max-width: 680px;
-      margin: 7vh auto;
-      padding: 0 15px;
-      text-align: center;
-    }
+    empId:
+      document.getElementById('emp-id').value.trim(),
 
-    .hero-logo {
-      width: 165px;
-      height: 165px;
-      margin: 0 auto 20px;
-    }
+    driver:
+      document.getElementById('driver').value.trim(),
 
-    .hero-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
+    dept:
+      document.getElementById('dept').value.trim(),
 
-    .hero h1 {
-      margin: 8px 0;
-      font-size: 42px;
-    }
+    borrowDate: dateVal,
 
-    .hero p {
-      color: var(--muted);
-      line-height: 1.8;
-    }
+    startTime: timeVal,
 
-    .hero-actions {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 28px;
-    }
+    endTime:
+      document.getElementById('end-time').value,
 
-    .hero-actions .button {
-      min-width: 190px;
-      padding: 14px 20px;
-    }
+    pax: pax,
 
-    /* ---------- 統計 ---------- */
+    reason: finalReason,
 
-    .stat-card {
-      padding: 19px;
-    }
+    location:
+      document.getElementById('location').value.trim(),
 
-    .stat-label {
-      color: var(--muted);
-      font-size: 14px;
-    }
+    note:
+      document.getElementById('note').value.trim(),
 
-    .stat-value {
-      margin-top: 7px;
-      color: var(--primary-dark);
-      font-size: 32px;
-      font-weight: 800;
-    }
+    plate:
+      isImmediate && plateInput
+        ? plateInput
+        : '',
 
-    /* ---------- 表格 ---------- */
+    status:
+      isImmediate && plateInput
+        ? '已派車(自行輸入)'
+        : '待派車'
+  };
 
-    .table-wrapper {
-      overflow-x: auto;
-    }
+  console.log('準備送出的資料:', payload);
 
-    table {
-      width: 100%;
-      min-width: 760px;
-      border-collapse: collapse;
-    }
+  try {
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
 
-    th,
-    td {
-      padding: 13px 12px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      white-space: nowrap;
-      font-size: 14px;
-    }
+    // fetch 本身不一定會因為 GAS 回傳錯誤而進入 catch，
+    // 因此這裡只要請求完成，就依原本流程顯示成功。
+    // 若你的 GAS 有回傳 JSON 狀態，也可以再增加 response.json() 判斷。
+    console.log('申請已送出，HTTP 狀態:', response.status);
 
-    th {
-      color: #596b76;
-      background: #f5f8f9;
-      font-weight: 800;
-    }
+    // 顯示成功畫面
+    document
+      .getElementById('step3')
+      .classList.remove('active');
 
-    /* ---------- 借車卡片 ---------- */
+    document
+      .getElementById('nav3')
+      .style.display = 'none';
 
-    .record-card {
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-      border-radius: 11px;
-      background: #fff;
-    }
+    document
+      .getElementById('success-view')
+      .classList.add('show');
 
-    .record-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-    }
+    document
+      .getElementById('progress-bar')
+      .style.width = '100%';
 
-    .record-title {
-      font-size: 17px;
-      font-weight: 800;
-    }
+    document
+      .getElementById('step-hint')
+      .textContent = '申請完成';
 
-    .record-info {
-      margin-top: 6px;
-      color: var(--muted);
-      line-height: 1.75;
-      font-size: 14px;
-    }
+    document
+      .getElementById('footer')
+      .style.display = 'none';
 
-    .record-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    .mobile-records {
-      display: none;
-    }
-
-    .guest-badge {
-      padding: 5px 9px;
-      border-radius: 999px;
-      color: #806844;
-      background: #f4ead8;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .mobile-nav {
-      display: none;
-    }
-
-    /* ---------- 響應式 ---------- */
-
-    @media (max-width: 950px) {
-      .grid-4 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    // 3 秒後關閉 LIFF
+    setTimeout(() => {
+      try {
+        if (typeof liff !== 'undefined' &&
+            liff.isInClient()) {
+          liff.closeWindow();
+        }
+      } catch (error) {
+        console.log('關閉 LIFF 視窗失敗:', error);
       }
-    }
+    }, 3000);
 
-    @media (max-width: 700px) {
-      .topbar {
-        height: 62px;
-        padding: 0 14px;
-      }
+  } catch (error) {
+    console.error('送出申請失敗:', error);
 
-      .brand {
-        font-size: 17px;
-      }
+    alert('送出失敗，請稍後再試。');
 
-      .brand-logo {
-        width: 38px;
-        height: 38px;
-      }
+    submitBtn.textContent = '送出申請';
+    submitBtn.disabled = false;
+  }
+}
 
-      .user-area span {
-        display: none;
-      }
+function loginWithLine() {
+  const state =
+    crypto.randomUUID();
 
-      .sidebar {
-        display: none;
-      }
+  sessionStorage.setItem(
+    'line_login_state',
+    state
+  );
 
-      .layout {
-        display: block;
-        min-height: auto;
-      }
+  const params =
+    new URLSearchParams({
+      response_type: 'code',
+      client_id: LINE_LOGIN_CHANNEL_ID,
+      redirect_uri:
+        LINE_LOGIN_REDIRECT_URI,
+      state: state,
+      scope: 'profile openid'
+    });
 
-      .main {
-        padding: 20px 14px 88px;
-      }
+  window.location.href =
+    'https://access.line.me/oauth2/v2.1/authorize?' +
+    params.toString();
+}
 
-      .page-title {
-        font-size: 24px;
-      }
+async function handleLineLoginCallback() {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
 
-      .page-header {
-        display: block;
-      }
+  const ticket =
+    params.get('login_ticket');
 
-      .grid-2,
-      .grid-3,
-      .grid-4 {
-        grid-template-columns: 1fr;
-      }
+  const returnedState =
+    params.get('state');
 
-      .hero {
-        margin: 7vh auto;
-      }
+  if (!ticket || !returnedState) {
+    return;
+  }
 
-      .hero-logo {
-        width: 135px;
-        height: 135px;
-      }
+  const savedState =
+    sessionStorage.getItem(
+      'line_login_state'
+    );
 
-      .hero h1 {
-        font-size: 32px;
-      }
+  if (
+    !savedState ||
+    savedState !== returnedState
+  ) {
+    alert(
+      '登入驗證失敗，請重新登入。'
+    );
+    return;
+  }
 
-      .hero-actions {
-        flex-direction: column;
-      }
-
-      .hero-actions .button {
-        width: 100%;
-      }
-
-      .form-actions {
-        flex-direction: column-reverse;
-      }
-
-      .form-actions .button {
-        width: 100%;
-      }
-
-      .mobile-nav {
-        position: fixed;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 30;
-        display: flex;
-        justify-content: space-around;
-        height: 64px;
-        padding: 6px;
-        border-top: 1px solid var(--border);
-        background: #fff;
-      }
-
-      .mobile-nav button {
-        padding: 5px 11px;
-        border: 0;
-        color: var(--muted);
-        background: transparent;
-        font-size: 12px;
-      }
-
-      .mobile-nav button.active {
-        color: var(--primary-dark);
-        font-weight: 800;
-      }
-
-      .table-wrapper {
-        display: none;
-      }
-
-      .mobile-records {
-        display: block;
-      }
-
-      .record-top {
-        display: block;
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <div id="app"></div>
-
-  <script>
-    /*
-     * =========================================================
-     * 系統設定
-     * =========================================================
-     */
-
-    const CONFIG = {
-      /*
-       * 預覽時保持 true。
-       * 正式串接 GAS 時改成 false。
-       */
-      PREVIEW_MODE: true,
-
-      GAS_URL:
-        "https://script.google.com/macros/s/AKfycbwz1QAtyd7k9ErQZr1ICx6xS-4ieeulPmKOtEf4w4uUE8CyKAtQCbhD5BXP4YzVoKWl/exec",
-
-      LIFF_ID: "2007826582-3tKuGAUu"
-    };
-
-    /*
-     * =========================================================
-     * 預覽資料
-     * =========================================================
-     */
-
-    const MOCK_RECORDS = [
-      {
-        borrowId: "BR-20260520103000123",
-        date: "2026-05-20",
-        startTime: "09:00",
-        endTime: "17:00",
-        employeeNo: "A001",
-        driver: "王小明",
-        department: "業務部",
-        passengers: 3,
-        reason: "客戶拜訪",
-        location: "台中",
-        plate: "ABC-1234",
-        mileage: "",
-        mileageTime: "",
-        status: "已派車",
-        note: "管理員指派車牌",
-        lineId: "U_DEMO_001"
-      },
-      {
-        borrowId: "BR-20260521110000456",
-        date: "2026-05-21",
-        startTime: "13:00",
-        endTime: "15:00",
-        employeeNo: "A002",
-        driver: "李小華",
-        department: "工程部",
-        passengers: 2,
-        reason: "設備檢查",
-        location: "新竹",
-        plate: "",
-        mileage: "",
-        mileageTime: "",
-        status: "待派車",
-        note: "",
-        lineId: "U_DEMO_002"
-      },
-      {
-        borrowId: "BR-20260522143000789",
-        date: "2026-05-22",
-        startTime: "14:30",
-        endTime: "18:00",
-        employeeNo: "A003",
-        driver: "陳小美",
-        department: "採購部",
-        passengers: 1,
-        reason: "供應商拜訪",
-        location: "桃園",
-        plate: "XYZ-7788",
-        mileage: "8890",
-        mileageTime: "2026-05-22 18:20",
-        status: "已回報",
-        note: "自行輸入車牌",
-        lineId: "U_DEMO_003"
-      }
-    ];
-
-    const DEFAULT_NOTICES = [
-      "借車前請確認借用日期、時間及地點。",
-      "用車完成後，請回報回程里程。"
-    ];
-
-    const PREVIEW_NOTICES = [
-      "借車前請確認借用日期、時間及地點。",
-      "請依實際需求填寫借車資料。",
-      "用車完成後，請回報回程里程。",
-      "如有問題，請聯絡管理員。"
-    ];
-
-    const state = {
-      mode: "guest",
-      user: null,
-      page: "home",
-      records: [...MOCK_RECORDS],
-      searchResult: [],
-      selectedRecord: null,
-      notices: []
-    };
-
-    /*
-     * =========================================================
-     * 基本工具
-     * =========================================================
-     */
-
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function getLocalDateString() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-
-      return `${year}-${month}-${day}`;
-    }
-
-    function getRequestedPage() {
-      const params = new URLSearchParams(location.search);
-      const page = params.get("page");
-
-      const allowedPages = [
-        "home",
-        "apply",
-        "search",
-        "mine"
-      ];
-
-      return allowedPages.includes(page) ? page : null;
-    }
-
-    function isWithinThirtyMinutes(date, time) {
-      const start = new Date(`${date}T${time}:00`);
-      const diff = start.getTime() - Date.now();
-
-      return diff <= 30 * 60 * 1000 &&
-             diff >= -24 * 60 * 60 * 1000;
-    }
-
-    function generateBorrowId() {
-      const now = new Date();
-      const pad = value => String(value).padStart(2, "0");
-      const ms = String(now.getMilliseconds()).padStart(3, "0");
-
-      return "BR-" +
-        now.getFullYear() +
-        pad(now.getMonth() + 1) +
-        pad(now.getDate()) +
-        pad(now.getHours()) +
-        pad(now.getMinutes()) +
-        pad(now.getSeconds()) +
-        ms;
-    }
-
-    function statusHtml(status) {
-      const classes = {
-        "待派車": "status-wait",
-        "已派車": "status-assigned",
-        "已回報": "status-done",
-        "已取消": "status-cancelled"
-      };
-
-      return `
-        <span class="status ${classes[status] || ""}">
-          ${escapeHtml(status)}
-        </span>
-      `;
-    }
-
-    function showMessage(message, type = "info") {
-      const box = document.getElementById("global-message");
-
-      if (!box) {
-        alert(message);
-        return;
-      }
-
-      box.className = `notice notice-${type}`;
-      box.textContent = message;
-      box.classList.remove("hidden");
-
-      setTimeout(() => {
-        box.classList.add("hidden");
-      }, 4500);
-    }
-
-    /*
-     * =========================================================
-     * API
-     * =========================================================
-     */
-
-    async function apiRequest(action, payload = {}) {
-      if (CONFIG.PREVIEW_MODE) {
-        return mockApi(action, payload);
-      }
-
-      const response = await fetch(CONFIG.GAS_URL, {
-        method: "POST",
+  try {
+    const response =
+      await fetch(GAS_URL, {
+        method: 'POST',
         headers: {
-          "Content-Type": "text/plain;charset=utf-8"
+          'Content-Type': 'text/plain;charset=utf-8'
         },
         body: JSON.stringify({
-          action,
-          ...payload
+          action:
+            'exchangeLoginTicket',
+          ticket: ticket,
+          state: returnedState
         })
       });
 
-      const result = await response.json();
+    const result =
+      await response.json();
 
-      if (!result.ok) {
-        throw new Error(result.message || "系統處理失敗");
-      }
-
-      return result;
+    if (!result.ok) {
+      throw new Error(
+        result.message || '登入失敗'
+      );
     }
 
-    async function mockApi(action, payload) {
-      await new Promise(resolve => setTimeout(resolve, 250));
-
-      if (action === "getNotices") {
-        return {
-          ok: true,
-          notices: [...PREVIEW_NOTICES]
-        };
-      }
-
-      if (action === "queryRecords") {
-        let records = [...state.records];
-
-        if (payload.dateFrom) {
-          records = records.filter(
-            record => record.date >= payload.dateFrom
-          );
-        }
-
-        if (payload.dateTo) {
-          records = records.filter(
-            record => record.date <= payload.dateTo
-          );
-        }
-
-        return {
-          ok: true,
-          records
-        };
-      }
-
-      if (action === "createBorrow") {
-        const record = {
-          ...payload,
-          borrowId: generateBorrowId(),
-          status: payload.plate ? "已派車" : "待派車",
-          mileage: "",
-          mileageTime: "",
-          note: payload.plate
-            ? "自行輸入車牌"
-            : "",
-          lineId: state.user?.lineId || ""
-        };
-
-        state.records.unshift(record);
-
-        return {
-          ok: true,
-          message: "借車申請已送出",
-          record
-        };
-      }
-
-      if (action === "assignPlate") {
-        const record = state.records.find(
-          item => item.borrowId === payload.borrowId
-        );
-
-        if (!record) {
-          throw new Error("找不到借車申請");
-        }
-
-        record.plate = payload.plate;
-        record.status = "已派車";
-        record.note = "管理員指派車牌";
-
-        return {
-          ok: true,
-          message: "已完成派車",
-          record
-        };
-      }
-
-      if (action === "reportMileage") {
-        const record = state.records.find(
-          item => item.borrowId === payload.borrowId
-        );
-
-        if (!record) {
-          throw new Error("找不到借車申請");
-        }
-
-        record.mileage = payload.mileage;
-        record.mileageTime = new Date()
-          .toLocaleString("zh-TW", { hour12: false })
-          .replaceAll("/", "-");
-
-        record.status = "已回報";
-
-        return {
-          ok: true,
-          message: "回程里程已回報",
-          record
-        };
-      }
-
-      throw new Error("預覽模式尚未支援此操作");
-    }
+    sessionStorage.removeItem(
+      'line_login_state'
+    );
 
     /*
-     * =========================================================
-     * 注意事項
-     * =========================================================
-     *
-     * 正式模式：
-     * 呼叫 GAS 的 getNotices action。
-     *
-     * GAS 預期回傳：
-     * {
-     *   "ok": true,
-     *   "notices": [
-     *     "第一項注意事項",
-     *     "第二項注意事項"
-     *   ]
-     * }
+     * 暫存登入資料。
+     * 後續可以改成短期 session。
      */
-
-    async function loadNotices() {
-      try {
-        const result = await apiRequest("getNotices");
-
-        if (Array.isArray(result.notices)) {
-          state.notices = result.notices
-            .map(item => String(item).trim())
-            .filter(item => item !== "");
-        }
-
-        if (!state.notices.length) {
-          state.notices = [...DEFAULT_NOTICES];
-        }
-      } catch (error) {
-        console.warn("讀取注意事項失敗：", error);
-        state.notices = [...DEFAULT_NOTICES];
-      }
-    }
-
-    function noticesHtml() {
-      if (!state.notices.length) {
-        return `
-          <p class="notice-empty">目前沒有注意事項。</p>
-        `;
-      }
-
-      return `
-        <ul class="notice-list">
-          ${state.notices.map(item => `
-            <li>${escapeHtml(item)}</li>
-          `).join("")}
-        </ul>
-      `;
-    }
+    sessionStorage.setItem(
+      'line_login_user',
+      JSON.stringify(result.user)
+    );
 
     /*
-     * =========================================================
-     * 身份與 LIFF
-     * =========================================================
+     * 清除網址上的 ticket，
+     * 避免重新整理時重複使用。
      */
-
-    function isLoggedIn() {
-      return state.mode === "user" || state.mode === "admin";
-    }
-
-    function isAdmin() {
-      return state.mode === "admin";
-    }
-
-    function enterGuestMode() {
-      state.mode = "guest";
-      state.user = null;
-      state.page = "search";
-      render();
-    }
-
-    function enterPreviewUser() {
-      state.mode = "user";
-      state.user = {
-        name: "王小明",
-        employeeNo: "A001",
-        department: "業務部",
-        lineId: "U_DEMO_001"
-      };
-
-      state.page = getRequestedPage() || "dashboard";
-      render();
-    }
-
-    function enterPreviewAdmin() {
-      state.mode = "admin";
-      state.user = {
-        name: "系統管理員",
-        employeeNo: "ADMIN",
-        department: "管理部",
-        lineId: "U_ADMIN_DEMO"
-      };
-
-      state.page = "admin";
-      render();
-    }
-
-    async function loginWithLine() {
-      if (CONFIG.PREVIEW_MODE) {
-        enterPreviewUser();
-        showMessage("預覽模式：已模擬一般使用者登入", "success");
-        return;
-      }
-
-      try {
-        await liff.init({
-          liffId: CONFIG.LIFF_ID
-        });
-
-        if (!liff.isLoggedIn()) {
-          liff.login({
-            redirectUri: window.location.href
-          });
-          return;
-        }
-
-        const profile = await liff.getProfile();
-
-        state.mode = "user";
-        state.user = {
-          name: profile.displayName,
-          lineId: profile.userId
-        };
-
-        state.page = getRequestedPage() || "dashboard";
-        render();
-      } catch (error) {
-        showMessage(error.message || "LINE 登入失敗", "danger");
-      }
-    }
-
-    async function initLiffEntry() {
-      if (CONFIG.PREVIEW_MODE) {
-        initPreviewRoute();
-        return;
-      }
-
-      try {
-        if (typeof liff === "undefined") {
-          render();
-          return;
-        }
-
-        await liff.init({
-          liffId: CONFIG.LIFF_ID
-        });
-
-        if (!liff.isLoggedIn()) {
-          liff.login({
-            redirectUri: window.location.href
-          });
-          return;
-        }
-
-        const profile = await liff.getProfile();
-
-        state.mode = "user";
-        state.user = {
-          name: profile.displayName,
-          lineId: profile.userId
-        };
-
-        /*
-         * LINE 按鈕：
-         * https://liff.line.me/2007826582-3tKuGAUu?page=apply
-         *
-         * 登入後會直接進入借車申請頁。
-         */
-        state.page = getRequestedPage() || "dashboard";
-        render();
-      } catch (error) {
-        document.getElementById("app").innerHTML = `
-          <div class="notice notice-danger" style="margin:20px;">
-            LINE 登入失敗：
-            ${escapeHtml(error.message)}
-          </div>
-        `;
-      }
-    }
-
-    function logout() {
-      if (
-        !CONFIG.PREVIEW_MODE &&
-        typeof liff !== "undefined" &&
-        liff.isLoggedIn()
-      ) {
-        liff.logout();
-      }
-
-      state.mode = "guest";
-      state.user = null;
-      state.page = "home";
-      render();
-    }
-
-    function go(page) {
-      state.page = page;
-      state.selectedRecord = null;
-      render();
-    }
-
-    /*
-     * =========================================================
-     * 外框與導覽
-     * =========================================================
-     */
-
-    function brandHtml() {
-      return `
-        <div class="brand">
-          <img
-            class="brand-logo"
-            src="./logo.png"
-            alt="借車系統 Logo">
-          <span>借車系統</span>
-        </div>
-      `;
-    }
-
-    function sidebarHtml() {
-      if (state.mode === "guest") {
-        return `
-          <aside class="sidebar">
-            <div class="sidebar-label">功能選單</div>
-
-            <button
-              class="nav-button ${state.page === "search" ? "active" : ""}"
-              onclick="go('search')">
-              🔎 借車查詢
-            </button>
-          </aside>
-        `;
-      }
-
-      return `
-        <aside class="sidebar">
-          <div class="sidebar-label">功能選單</div>
-
-          <button
-            class="nav-button ${state.page === "dashboard" ? "active" : ""}"
-            onclick="go('dashboard')">
-            🏠 首頁
-          </button>
-
-          <button
-            class="nav-button ${state.page === "apply" ? "active" : ""}"
-            onclick="go('apply')">
-            📝 借車申請
-          </button>
-
-          <button
-            class="nav-button ${state.page === "search" ? "active" : ""}"
-            onclick="go('search')">
-            🔎 借車查詢
-          </button>
-
-          <button
-            class="nav-button ${state.page === "mine" ? "active" : ""}"
-            onclick="go('mine')">
-            📋 我的申請
-          </button>
-
-          ${
-            isAdmin()
-              ? `
-                <div class="sidebar-label">管理功能</div>
-
-                <button
-                  class="nav-button ${state.page === "admin" ? "active" : ""}"
-                  onclick="go('admin')">
-                  🛠 管理員後台
-                </button>
-
-                <button
-                  class="nav-button ${state.page === "records" ? "active" : ""}"
-                  onclick="go('records')">
-                  📊 借車紀錄
-                </button>
-              `
-              : ""
-          }
-        </aside>
-      `;
-    }
-
-    function mobileNavHtml() {
-      if (state.mode === "guest") {
-        return `
-          <nav class="mobile-nav">
-            <button
-              class="${state.page === "search" ? "active" : ""}"
-              onclick="go('search')">
-              🔎<br>查詢
-            </button>
-          </nav>
-        `;
-      }
-
-      return `
-        <nav class="mobile-nav">
-          <button
-            class="${state.page === "dashboard" ? "active" : ""}"
-            onclick="go('dashboard')">
-            🏠<br>首頁
-          </button>
-
-          <button
-            class="${state.page === "apply" ? "active" : ""}"
-            onclick="go('apply')">
-            📝<br>申請
-          </button>
-
-          <button
-            class="${state.page === "search" ? "active" : ""}"
-            onclick="go('search')">
-            🔎<br>查詢
-          </button>
-
-          <button
-            class="${state.page === "mine" ? "active" : ""}"
-            onclick="go('mine')">
-            📋<br>我的
-          </button>
-        </nav>
-      `;
-    }
-
-    function shell(content) {
-      const simpleHome =
-        state.mode === "guest" &&
-        state.page === "home";
-
-      if (simpleHome) {
-        return `
-          <div>
-            <header class="topbar">
-              ${brandHtml()}
-            </header>
-
-            ${content}
-          </div>
-        `;
-      }
-
-      return `
-        <div>
-          <header class="topbar">
-            ${brandHtml()}
-
-            <div class="user-area">
-              ${
-                state.mode === "guest"
-                  ? `<span class="guest-badge">訪客模式</span>`
-                  : `
-                    <span>${escapeHtml(state.user?.name || "")}</span>
-                    <button
-                      class="button button-secondary"
-                      onclick="logout()">
-                      登出
-                    </button>
-                  `
-              }
-            </div>
-          </header>
-
-          <div class="layout">
-            ${sidebarHtml()}
-
-            <main class="main">
-              <div id="global-message" class="hidden"></div>
-              ${content}
-            </main>
-          </div>
-
-          ${mobileNavHtml()}
-        </div>
-      `;
-    }
-
-    /*
-     * =========================================================
-     * 頁面
-     * =========================================================
-     */
-
-    function homePage() {
-      return `
-        <section class="hero">
-          <div class="hero-logo">
-            <img
-              src="./logo.png"
-              alt="借車系統 Logo">
-          </div>
-
-          <h1>借車系統</h1>
-
-          <p>
-            提供借車申請、借車紀錄查詢、車牌指派及回程里程回報功能。
-            <br>
-            訪客不需登入即可查詢公開借車紀錄。
-          </p>
-
-          <div class="hero-actions">
-            <button
-              class="button button-primary"
-              onclick="loginWithLine()">
-              使用 LINE 登入
-            </button>
-
-            <button
-              class="button button-light"
-              onclick="enterGuestMode()">
-              訪客查詢借車紀錄
-            </button>
-          </div>
-
-          ${
-            CONFIG.PREVIEW_MODE
-              ? `
-                <div class="notice notice-warning" style="text-align:left;">
-                  目前為預覽模式。<br>
-                  一般使用者：按「使用 LINE 登入」<br>
-                  管理員預覽：網址加上
-                  <code>?preview=admin</code>
-                </div>
-              `
-              : ""
-          }
-        </section>
-      `;
-    }
-
-    function dashboardPage() {
-      return `
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">首頁</h1>
-            <div class="page-subtitle">
-              歡迎回來，${escapeHtml(state.user?.name || "")}
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-3">
-          <div class="card">
-            <div class="stat-label">新增借車申請</div>
-            <div class="stat-value">📝</div>
-
-            <button
-              class="button button-primary"
-              onclick="go('apply')">
-              開始申請
-            </button>
-          </div>
-
-          <div class="card">
-            <div class="stat-label">查詢借車紀錄</div>
-            <div class="stat-value">🔎</div>
-
-            <button
-              class="button button-light"
-              onclick="go('search')">
-              開始查詢
-            </button>
-          </div>
-
-          <div class="card">
-            <div class="stat-label">我的申請</div>
-            <div class="stat-value">📋</div>
-
-            <button
-              class="button button-light"
-              onclick="go('mine')">
-              查看申請
-            </button>
-          </div>
-        </div>
-
-        <div class="card notice-card">
-          <h3>注意事項</h3>
-
-          <div class="notice notice-info">
-            ${noticesHtml()}
-          </div>
-        </div>
-      `;
-    }
-
-    function applyPage() {
-  const tomorrow = new Date(Date.now() + 86400000);
-  const defaultDate = tomorrow.toLocaleDateString("sv-SE");
-
-  return `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">借車申請</h1>
-        <div class="page-subtitle">請填寫本次借車資料</div>
-      </div>
-    </div>
-
-    <form class="card" onsubmit="submitBorrow(event)">
-      <div class="grid grid-2">
-        <div>
-          <label>工號 *</label>
-          <input
-            id="f-employeeNo"
-            required
-            value="${escapeHtml(state.user?.employeeNo || "")}">
-        </div>
-
-        <div>
-          <label>駕駛人 *</label>
-          <input
-            id="f-driver"
-            required
-            value="${escapeHtml(state.user?.name || "")}">
-        </div>
-
-        <div>
-          <label>部門 *</label>
-          <input
-            id="f-department"
-            required
-            value="${escapeHtml(state.user?.department || "")}">
-        </div>
-
-        <div>
-          <label>借用日期 *</label>
-          <input
-            id="f-date"
-            type="date"
-            required
-            value="${defaultDate}"
-            onchange="updatePlateRule()">
-        </div>
-
-        <div>
-          <label>開始時間 *</label>
-          <input
-            id="f-startTime"
-            type="time"
-            required
-            value="09:00"
-            onchange="updatePlateRule()">
-        </div>
-
-        <div>
-          <label>結束時間 *</label>
-          <input
-            id="f-endTime"
-            type="time"
-            required
-            value="17:00">
-        </div>
-
-        <div>
-          <label>乘車人數</label>
-          <input
-            id="f-passengers"
-            type="number"
-            min="1"
-            value="1"
-            required>
-        </div>
-      </div>
-
-      <!-- 借用事由縮小為單行輸入欄位 -->
-      <div class="form-field-compact">
-        <label>借用事由 *</label>
-        <input
-          id="f-reason"
-          type="text"
-          required>
-      </div>
-
-      <div class="form-field-compact">
-        <label>地點 *</label>
-        <input
-          id="f-location"
-          type="text"
-          required>
-      </div>
-
-      <!-- 車牌號碼移到最下面 -->
-      <div class="form-field-compact plate-section">
-        <label>車牌號碼</label>
-        <input
-          id="f-plate"
-          type="text"
-          placeholder="依時間規則顯示">
-
-        <div
-          id="plate-hint"
-          class="page-subtitle">
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button
-          type="button"
-          class="button button-secondary"
-          onclick="go('dashboard')">
-          取消
-        </button>
-
-        <button
-          type="submit"
-          class="button button-primary">
-          確認申請
-        </button>
-      </div>
-    </form>
-  `;
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname
+    );
+
+    showLoggedInPage(result.user);
+
+  } catch (error) {
+    console.error(
+      '登入票券兌換失敗：',
+      error
+    );
+
+    alert(
+      'LINE 登入失敗：' +
+      error.message
+    );
+  }
 }
 
-    function searchPage() {
-      const today = getLocalDateString();
-      const guest = state.mode === "guest";
-
-      return `
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">借車查詢</h1>
-            <div class="page-subtitle">
-              ${
-                guest
-                  ? "訪客模式：只能查看公開借車紀錄"
-                  : "可查詢自己的或其他人的借車紀錄"
-              }
-            </div>
-          </div>
-        </div>
-
-        ${
-          guest
-            ? `
-              <div class="notice notice-warning">
-                訪客不需登入，但只能查看公開借車紀錄。
-              </div>
-            `
-            : ""
-        }
-
-        <form class="card" onsubmit="submitSearch(event)">
-          <div class="grid grid-2">
-            <div>
-              <label>日期起 *</label>
-              <input
-                id="q-dateFrom"
-                type="date"
-                value="${today}"
-                required>
-            </div>
-
-            <div>
-              <label>日期迄 *</label>
-              <input
-                id="q-dateTo"
-                type="date"
-                value="${today}"
-                required>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button
-              type="button"
-              class="button button-secondary"
-              onclick="clearSearch()">
-              清除條件
-            </button>
-
-            <button
-              type="submit"
-              class="button button-primary">
-              開始查詢
-            </button>
-          </div>
-        </form>
-
-        <div class="card">
-          <div class="page-header" style="margin-bottom:10px;">
-            <h3 style="margin:0;">查詢結果</h3>
-            <span id="result-count" class="page-subtitle"></span>
-          </div>
-
-          <div id="search-results">
-            <div class="empty">
-              請選擇日期區間後開始查詢。
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function minePage() {
-      const records = state.records.filter(record =>
-        record.lineId === state.user?.lineId ||
-        record.employeeNo === state.user?.employeeNo
-      );
-
-      return `
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">我的申請</h1>
-            <div class="page-subtitle">查看自己建立的借車申請</div>
-          </div>
-        </div>
-
-        <div class="card">
-          ${
-            records.length
-              ? records.map(recordCard).join("")
-              : `<div class="empty">目前沒有申請紀錄。</div>`
-          }
-        </div>
-      `;
-    }
-
-    function adminPage() {
-      const waiting = state.records.filter(
-        record => record.status === "待派車"
-      );
-
-      const assigned = state.records.filter(
-        record => record.status === "已派車"
-      );
-
-      const reported = state.records.filter(
-        record => record.status === "已回報"
-      );
-
-      return `
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">管理員後台</h1>
-            <div class="page-subtitle">查看待派車申請及借車狀態</div>
-          </div>
-        </div>
-
-        <div class="grid grid-4">
-          <div class="card stat-card">
-            <div class="stat-label">待派車</div>
-            <div class="stat-value">${waiting.length}</div>
-          </div>
-
-          <div class="card stat-card">
-            <div class="stat-label">已派車</div>
-            <div class="stat-value">${assigned.length}</div>
-          </div>
-
-          <div class="card stat-card">
-            <div class="stat-label">已回報</div>
-            <div class="stat-value">${reported.length}</div>
-          </div>
-
-          <div class="card stat-card">
-            <div class="stat-label">全部申請</div>
-            <div class="stat-value">${state.records.length}</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>待派車申請</h3>
-
-          ${
-            waiting.length
-              ? waiting.map(recordCard).join("")
-              : `<div class="empty">目前沒有待派車申請。</div>`
-          }
-        </div>
-      `;
-    }
-
-    function recordsPage() {
-      return `
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">借車紀錄</h1>
-            <div class="page-subtitle">管理員可查看完整借車資料</div>
-          </div>
-        </div>
-
-        <div class="card">
-          ${state.records.map(recordCard).join("")}
-        </div>
-      `;
-    }
-
-    function recordCard(record) {
-      return `
-        <div class="record-card">
-          <div class="record-top">
-            <div>
-              <div class="record-title">
-                ${escapeHtml(record.date)}
-               　${escapeHtml(record.driver)}
-              </div>
-
-              <div class="record-info">
-                ${escapeHtml(record.department)}<br>
-                ${escapeHtml(record.startTime)}
-                ～${escapeHtml(record.endTime)}
-                ／${escapeHtml(record.location)}<br>
-                車牌：${escapeHtml(record.plate || "尚未指派")}
-              </div>
-            </div>
-
-            <div>${statusHtml(record.status)}</div>
-          </div>
-
-          <div class="record-actions">
-            <button
-              class="button button-light"
-              onclick="viewRecord('${escapeHtml(record.borrowId)}')">
-              查看詳情
-            </button>
-
-            ${
-              isAdmin() && record.status === "待派車"
-                ? `
-                  <button
-                    class="button button-primary"
-                    onclick="assignPlate('${escapeHtml(record.borrowId)}')">
-                    指派車牌
-                  </button>
-                `
-                : ""
-            }
-          </div>
-        </div>
-      `;
-    }
-
-    function detailPage(record) {
-      if (!record) {
-        return searchPage();
-      }
-
-      const guest = state.mode === "guest";
-      const ownRecord =
-        record.lineId === state.user?.lineId ||
-        record.employeeNo === state.user?.employeeNo;
-
-      return `
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">借車詳情</h1>
-            <div class="page-subtitle">
-              ${escapeHtml(record.borrowId)}
-            </div>
-          </div>
-
-          <button
-            class="button button-secondary"
-            onclick="go('search')">
-            返回查詢
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="grid grid-2">
-            <div>
-              <strong>借用日期</strong><br>
-              ${escapeHtml(record.date)}
-            </div>
-
-            <div>
-              <strong>借用時間</strong><br>
-              ${escapeHtml(record.startTime)}
-              ～${escapeHtml(record.endTime)}
-            </div>
-
-            <div>
-              <strong>駕駛人</strong><br>
-              ${escapeHtml(record.driver)}
-            </div>
-
-            <div>
-              <strong>部門</strong><br>
-              ${escapeHtml(record.department)}
-            </div>
-
-            <div>
-              <strong>地點</strong><br>
-              ${escapeHtml(record.location)}
-            </div>
-
-            <div>
-              <strong>車牌</strong><br>
-              ${escapeHtml(record.plate || "尚未指派")}
-            </div>
-
-            <div>
-              <strong>狀態</strong><br>
-              ${statusHtml(record.status)}
-            </div>
-
-            ${
-              guest
-                ? ""
-                : `
-                  <div>
-                    <strong>乘車人數</strong><br>
-                    ${escapeHtml(record.passengers)}
-                  </div>
-
-                  <div>
-                    <strong>借用事由</strong><br>
-                    ${escapeHtml(record.reason)}
-                  </div>
-
-                  <div>
-                      <strong>回程里程</strong><br>
-                       ${escapeHtml(record.mileage || "尚未回報")}
-                  </div>
-
-                  <div>
-                       <strong>實際回程時間</strong><br>
-                       ${escapeHtml(record.mileageTime || "尚未回報")}
-                  </div>
-                `
-            }
-          </div>
-
-          ${
-            !guest &&
-            ownRecord &&
-            record.status === "已派車"
-              ? `
-                <div class="form-actions">
-                  <button
-                    class="button button-success"
-                    onclick="reportMileage('${escapeHtml(record.borrowId)}')">
-                    回報回程里程
-                  </button>
-                </div>
-              `
-              : ""
-          }
-        </div>
-      `;
-    }
-
-    /*
-     * =========================================================
-     * 操作功能
-     * =========================================================
-     */
-
-    function updatePlateRule() {
-      const date = document.getElementById("f-date")?.value;
-      const time = document.getElementById("f-startTime")?.value;
-      const hint = document.getElementById("plate-hint");
-      const plate = document.getElementById("f-plate");
-
-      if (!date || !time || !hint || !plate) {
-        return;
-      }
-
-      if (isWithinThirtyMinutes(date, time)) {
-        hint.textContent =
-          "距離開始時間 30 分鐘內，可輸入車牌，也可以留白；留白時由管理員指派。";
-      } else {
-        plate.value = "";
-        hint.textContent =
-          "目前超過 30 分鐘，車牌將由管理員安排。";
-      }
-    }
-
-    async function submitBorrow(event) {
-      event.preventDefault();
-
-      const date = document.getElementById("f-date").value;
-      const startTime = document.getElementById("f-startTime").value;
-      const endTime = document.getElementById("f-endTime").value;
-
-      if (endTime <= startTime) {
-        showMessage("結束時間必須晚於開始時間", "danger");
-        return;
-      }
-
-      const canInputPlate = isWithinThirtyMinutes(date, startTime);
-
-      const plate = canInputPlate
-        ? document.getElementById("f-plate").value.trim()
-        : "";
-
-      const payload = {
-        employeeNo:
-          document.getElementById("f-employeeNo").value.trim(),
-
-        driver:
-          document.getElementById("f-driver").value.trim(),
-
-        department:
-          document.getElementById("f-department").value.trim(),
-
-        date,
-        startTime,
-        endTime,
-
-        passengers: Number(
-          document.getElementById("f-passengers").value
-        ),
-
-        reason:
-          document.getElementById("f-reason").value.trim(),
-
-        location:
-          document.getElementById("f-location").value.trim(),
-
-        plate
-      };
-
-      try {
-        const result = await apiRequest("createBorrow", payload);
-
-        state.selectedRecord = result.record;
-        state.page = "mine";
-        render();
-
-        showMessage(
-          `${result.message}，申請編號：${result.record.borrowId}`,
-          "success"
-        );
-      } catch (error) {
-        showMessage(error.message, "danger");
-      }
-    }
-
-    async function submitSearch(event) {
-      event.preventDefault();
-
-      const dateFrom =
-        document.getElementById("q-dateFrom").value;
-
-      const dateTo =
-        document.getElementById("q-dateTo").value;
-
-      if (!dateFrom || !dateTo) {
-        showMessage("請選擇日期起訖", "danger");
-        return;
-      }
-
-      if (dateFrom > dateTo) {
-        showMessage("日期起不能晚於日期迄", "danger");
-        return;
-      }
-
-      try {
-        const result = await apiRequest("queryRecords", {
-          dateFrom,
-          dateTo
-        });
-
-        state.searchResult = result.records;
-        renderSearchResults(result.records);
-      } catch (error) {
-        showMessage(error.message, "danger");
-      }
-    }
-
-    function clearSearch() {
-      const today = getLocalDateString();
-
-      const dateFrom =
-        document.getElementById("q-dateFrom");
-
-      const dateTo =
-        document.getElementById("q-dateTo");
-
-      const resultBox =
-        document.getElementById("search-results");
-
-      const countBox =
-        document.getElementById("result-count");
-
-      if (dateFrom) {
-        dateFrom.value = today;
-      }
-
-      if (dateTo) {
-        dateTo.value = today;
-      }
-
-      if (countBox) {
-        countBox.textContent = "";
-      }
-
-      if (resultBox) {
-        resultBox.innerHTML =
-          `<div class="empty">請選擇日期區間後開始查詢。</div>`;
-      }
-
-      state.searchResult = [];
-    }
-
-    function renderSearchResults(records) {
-      const resultBox =
-        document.getElementById("search-results");
-
-      const countBox =
-        document.getElementById("result-count");
-
-      if (!resultBox) {
-        return;
-      }
-
-      if (countBox) {
-        countBox.textContent = `共 ${records.length} 筆`;
-      }
-
-      if (!records.length) {
-        resultBox.innerHTML =
-          `<div class="empty">查無借車紀錄。</div>`;
-        return;
-      }
-
-      resultBox.innerHTML = `
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>駕駛人</th>
-                <th>部門</th>
-                <th>時間</th>
-                <th>地點</th>
-                <th>車牌</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              ${records.map(record => `
-                <tr>
-                  <td>${escapeHtml(record.date)}</td>
-                  <td>${escapeHtml(record.driver)}</td>
-                  <td>${escapeHtml(record.department)}</td>
-                  <td>
-                    ${escapeHtml(record.startTime)}
-                    ～${escapeHtml(record.endTime)}
-                  </td>
-                  <td>${escapeHtml(record.location)}</td>
-                  <td>${escapeHtml(record.plate || "尚未指派")}</td>
-                  <td>${statusHtml(record.status)}</td>
-                  <td>
-                    <button
-                      class="button button-light"
-                      onclick="viewRecord('${escapeHtml(record.borrowId)}')">
-                      查看
-                    </button>
-                  </td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mobile-records">
-          ${records.map(recordCard).join("")}
-        </div>
-      `;
-    }
-
-    function viewRecord(borrowId) {
-      const record =
-        state.records.find(item => item.borrowId === borrowId) ||
-        state.searchResult.find(item => item.borrowId === borrowId);
-
-      state.selectedRecord = record;
-      state.page = "detail";
-      render();
-    }
-
-    async function assignPlate(borrowId) {
-      const plate = prompt("請輸入要指派的車牌號碼：");
-
-      if (!plate || !plate.trim()) {
-        return;
-      }
-
-      try {
-        const result = await apiRequest("assignPlate", {
-          borrowId,
-          plate: plate.trim()
-        });
-
-        render();
-        showMessage(result.message, "success");
-      } catch (error) {
-        showMessage(error.message, "danger");
-      }
-    }
-
-    async function reportMileage(borrowId) {
-      const mileage = prompt("請輸入回程里程數：");
-
-      if (!mileage || !mileage.trim()) {
-        return;
-      }
-
-      if (!/^[0-9]+(?:\.[0-9]+)?$/.test(mileage.trim())) {
-        showMessage("里程數必須是數字", "danger");
-        return;
-      }
-
-      try {
-        const result = await apiRequest("reportMileage", {
-          borrowId,
-          mileage: mileage.trim()
-        });
-
-        state.selectedRecord = result.record;
-        render();
-        showMessage(result.message, "success");
-      } catch (error) {
-        showMessage(error.message, "danger");
-      }
-    }
-
-    /*
-     * =========================================================
-     * 渲染
-     * =========================================================
-     */
-
-    function render() {
-      let content;
-
-      switch (state.page) {
-        case "dashboard":
-          content = dashboardPage();
-          break;
-
-        case "apply":
-          content = applyPage();
-          break;
-
-        case "search":
-          content = searchPage();
-          break;
-
-        case "mine":
-          content = minePage();
-          break;
-
-        case "admin":
-          content = isAdmin() ? adminPage() : dashboardPage();
-          break;
-
-        case "records":
-          content = isAdmin() ? recordsPage() : dashboardPage();
-          break;
-
-        case "detail":
-          content = detailPage(state.selectedRecord);
-          break;
-
-        case "home":
-        default:
-          content = homePage();
-      }
-
-      document.getElementById("app").innerHTML =
-        shell(content);
-
-      if (state.page === "apply") {
-        setTimeout(updatePlateRule, 0);
-      }
-    }
-
-    function initPreviewRoute() {
-      const params =
-        new URLSearchParams(window.location.search);
-
-      const preview = params.get("preview");
-
-      if (preview === "admin") {
-        enterPreviewAdmin();
-        return;
-      }
-
-      if (preview === "user") {
-        enterPreviewUser();
-        return;
-      }
-
-      if (preview === "guest") {
-        enterGuestMode();
-        return;
-      }
-
-      /*
-       * 預覽 page=apply：
-       * index.html?page=apply
-       */
-      if (getRequestedPage() === "apply") {
-        enterPreviewUser();
-        return;
-      }
-
-      render();
-    }
-
-    /*
-     * =========================================================
-     * 啟動
-     * =========================================================
-     */
-
-    async function startApp() {
-      /*
-       * 注意事項先讀取完成，
-       * 再初始化 LIFF 或顯示首頁。
-       */
-      await loadNotices();
-      await initLiffEntry();
-    }
-
-    startApp();
-  </script>
-</body>
-</html>
+// ==========================================
+// 啟動程式
+// ==========================================
+initLiff();
+</script>
