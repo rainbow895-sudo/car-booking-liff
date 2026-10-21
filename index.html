@@ -82,13 +82,6 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      min-width: 0;
-    }
-
     .brand {
       display: flex;
       align-items: center;
@@ -122,34 +115,39 @@
     }
 
     .sidebar {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      min-width: 0;
+      width: 235px;
+      flex-shrink: 0;
+      padding: 22px 14px;
+      background: var(--sidebar);
     }
 
-    .sidebar-label { display: none; }
+    .sidebar-label {
+      margin: 8px 12px 10px;
+      color: #d9e3e9;
+      font-size: 12px;
+      font-weight: 700;
+    }
 
     .nav-button {
-      padding: 10px 12px;
+      width: 100%;
+      padding: 12px 13px;
+      margin-bottom: 5px;
       border: 0;
       border-radius: 8px;
-      color: var(--text);
+      color: #eef3f6;
       background: transparent;
-      white-space: nowrap;
-      font-size: 14px;
+      text-align: left;
       font-weight: 600;
     }
 
     .nav-button:hover,
     .nav-button.active {
-      color: var(--primary-dark);
-      background: var(--primary-light);
+      background: rgba(255, 255, 255, .2);
     }
 
     .main {
       width: 100%;
-      max-width: 1280px;
+      max-width: 1500px;
       margin: 0 auto;
       padding: 30px;
     }
@@ -191,9 +189,6 @@
       display: grid;
       gap: 16px;
     }
-
-    /* Grid 中卡片不套用堆疊版面的額外上邊距，確保卡片頂端對齊。 */
-    .grid > .card + .card { margin-top: 0; }
 
     .grid-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -262,15 +257,11 @@
 }
 
     .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
       padding: 10px 16px;
       border: 0;
       border-radius: 8px;
       font-weight: 700;
       transition: .15s;
-      text-decoration: none;
     }
 
     .button:hover {
@@ -431,7 +422,6 @@
     .hero-actions {
       display: flex;
       justify-content: center;
-      align-items: center;
       flex-wrap: wrap;
       gap: 12px;
       margin-top: 28px;
@@ -446,38 +436,7 @@
 
     .stat-card {
       padding: 19px;
-      min-height: 145px;
-      cursor: pointer;
-      transition: transform .15s ease, box-shadow .15s ease;
     }
-
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(65, 82, 95, .1);
-    }
-
-    .stat-hint {
-      margin-top: 9px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .record-list { list-style: none; padding: 0; margin: 0; }
-    .record-list-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 13px 4px;
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-    }
-    .record-list-item:last-child { border-bottom: 0; }
-    .record-list-item:hover .record-title { color: var(--primary-dark); }
-    .record-list-main { min-width: 0; }
-    .record-list-meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
-    .record-list-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
     .stat-label {
       color: var(--muted);
@@ -511,11 +470,6 @@
       white-space: nowrap;
       font-size: 14px;
     }
-
-    .clickable-row { cursor: pointer; }
-    .clickable-row:hover td { background: #f4f8fa; }
-    .search-record-card { cursor: pointer; }
-    .search-record-card:hover { border-color: var(--primary); }
 
     th {
       color: #596b76;
@@ -578,8 +532,6 @@
     /* ---------- 響應式 ---------- */
 
     @media (max-width: 950px) {
-      .topbar-left { gap: 10px; }
-      .nav-button { padding: 9px 8px; font-size: 13px; }
       .grid-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -600,26 +552,13 @@
         height: 38px;
       }
 
-      /* 頂部只隱藏姓名；訪客模式標籤保留，避免 span 規則誤藏。 */
-      .user-area > span:not(.guest-badge) {
+      .user-area span {
         display: none;
       }
 
       .sidebar {
         display: none;
       }
-
-      .topbar-left { gap: 0; }
-      .topbar { gap: 8px; }
-      .record-list-item { align-items: flex-start; }
-      .record-list-actions { flex-direction: column; align-items: flex-end; }
-      .grid-2.form-extra-grid { grid-template-columns: 1fr; }
-      .plate-section { margin-top: 0; }
-      .stat-card { min-height: 0; }
-      .card { padding: 18px; }
-      .button { min-height: 42px; }
-      .record-list-item { padding: 12px 0; }
-      .record-list-meta { line-height: 1.55; }
 
       .layout {
         display: block;
@@ -688,22 +627,17 @@
       }
 
       .mobile-nav button {
-        flex: 1;
-        min-width: 0;
-        padding: 5px 2px;
+        padding: 5px 11px;
         border: 0;
         color: var(--muted);
         background: transparent;
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .mobile-nav button.active {
         color: var(--primary-dark);
         font-weight: 800;
       }
-
-      .mobile-nav-admin { justify-content: space-around; }
-      .mobile-nav-admin button { font-size: 10px; }
 
       .table-wrapper {
         display: none;
@@ -735,16 +669,12 @@
        * 預覽時保持 true。
        * 正式串接 GAS 時改成 false。
        */
-      PREVIEW_MODE: false,
+      PREVIEW_MODE: true,
 
       GAS_URL:
         "https://script.google.com/macros/s/AKfycbwz1QAtyd7k9ErQZr1ICx6xS-4ieeulPmKOtEf4w4uUE8CyKAtQCbhD5BXP4YzVoKWl/exec",
 
-      LIFF_ID: "2007826582-3tKuGAUu",
-      LINE_CHANNEL_ID: "2007826582",
-
-      // 設定官方 LINE 加好友網址後，首頁會顯示加入按鈕。
-      LINE_OFFICIAL_URL: "https://lin.ee/8xIdpgp"
+      LIFF_ID: "2007826582-3tKuGAUu"
     };
 
     /*
@@ -936,11 +866,6 @@
         return mockApi(action, payload);
       }
 
-      const idToken =
-        typeof liff !== "undefined" && liff.isLoggedIn()
-          ? liff.getIDToken()
-          : "";
-
       const response = await fetch(CONFIG.GAS_URL, {
         method: "POST",
         headers: {
@@ -948,8 +873,7 @@
         },
         body: JSON.stringify({
           action,
-          ...payload,
-          ...(idToken ? { idToken } : {})
+          ...payload
         })
       });
 
@@ -1161,23 +1085,6 @@
       render();
     }
 
-    async function establishVerifiedSession(profile) {
-      const idToken = liff.getIDToken();
-      if (!idToken) {
-        throw new Error("無法取得 LINE 登入憑證，請重新登入。");
-      }
-
-      // 由 GAS 向 LINE 驗證 ID Token，前端不自行判斷或傳送管理員 LINE ID。
-      const result = await apiRequest("adminStatus");
-      state.mode = result.isAdmin ? "admin" : "user";
-      state.user = {
-        name: profile.displayName || "LINE 使用者",
-        lineId: profile.userId,
-        isAdmin: !!result.isAdmin
-      };
-      return result;
-    }
-
     async function loginWithLine() {
       if (CONFIG.PREVIEW_MODE) {
         enterPreviewUser();
@@ -1198,10 +1105,14 @@
         }
 
         const profile = await liff.getProfile();
-        await establishVerifiedSession(profile);
 
-        state.page = getRequestedPage() || (isAdmin() ? "admin" : "dashboard");
-        if (isAdmin()) await loadAdminRecords();
+        state.mode = "user";
+        state.user = {
+          name: profile.displayName,
+          lineId: profile.userId
+        };
+
+        state.page = getRequestedPage() || "dashboard";
         render();
       } catch (error) {
         showMessage(error.message || "LINE 登入失敗", "danger");
@@ -1232,7 +1143,12 @@
         }
 
         const profile = await liff.getProfile();
-        await establishVerifiedSession(profile);
+
+        state.mode = "user";
+        state.user = {
+          name: profile.displayName,
+          lineId: profile.userId
+        };
 
         /*
          * LINE 按鈕：
@@ -1240,8 +1156,7 @@
          *
          * 登入後會直接進入借車申請頁。
          */
-        state.page = getRequestedPage() || (isAdmin() ? "admin" : "dashboard");
-        if (isAdmin()) await loadAdminRecords();
+        state.page = getRequestedPage() || "dashboard";
         render();
       } catch (error) {
         document.getElementById("app").innerHTML = `
@@ -1372,7 +1287,7 @@
       }
 
       return `
-        <nav class="mobile-nav ${isAdmin() ? "mobile-nav-admin" : ""}">
+        <nav class="mobile-nav">
           <button
             class="${state.page === "dashboard" ? "active" : ""}"
             onclick="go('dashboard')">
@@ -1396,11 +1311,6 @@
             onclick="go('mine')">
             📋<br>我的
           </button>
-
-          ${isAdmin() ? `
-            <button class="${state.page === "admin" ? "active" : ""}" onclick="go('admin')">🛠<br>管理</button>
-            <button class="${state.page === "records" ? "active" : ""}" onclick="go('records')">📊<br>紀錄</button>
-          ` : ""}
         </nav>
       `;
     }
@@ -1425,10 +1335,7 @@
       return `
         <div>
           <header class="topbar">
-            <div class="topbar-left">
-              ${brandHtml()}
-              ${sidebarHtml()}
-            </div>
+            ${brandHtml()}
 
             <div class="user-area">
               ${
@@ -1447,6 +1354,8 @@
           </header>
 
           <div class="layout">
+            ${sidebarHtml()}
+
             <main class="main">
               <div id="global-message" class="hidden"></div>
               ${content}
@@ -1493,10 +1402,6 @@
               onclick="enterGuestMode()">
               訪客查詢借車紀錄
             </button>
-
-            ${CONFIG.LINE_OFFICIAL_URL
-              ? `<a class="button button-line" href="${escapeHtml(CONFIG.LINE_OFFICIAL_URL)}" target="_blank" rel="noopener">加入官方 LINE</a>`
-              : ""}
           </div>
 
           ${
@@ -1649,19 +1554,34 @@
         </div>
       </div>
 
-      <div class="grid grid-2 form-extra-grid">
-        <div>
-          <label>借用事由 *</label>
-          <input id="f-reason" type="text" required>
-        </div>
-        <div>
-          <label>地點 *</label>
-          <input id="f-location" type="text" required>
-        </div>
-        <div class="plate-section">
-          <label>車牌號碼</label>
-          <input id="f-plate" type="text" placeholder="依時間規則顯示">
-          <div id="plate-hint" class="page-subtitle"></div>
+      <!-- 借用事由縮小為單行輸入欄位 -->
+      <div class="form-field-compact">
+        <label>借用事由 *</label>
+        <input
+          id="f-reason"
+          type="text"
+          required>
+      </div>
+
+      <div class="form-field-compact">
+        <label>地點 *</label>
+        <input
+          id="f-location"
+          type="text"
+          required>
+      </div>
+
+      <!-- 車牌號碼移到最下面 -->
+      <div class="form-field-compact plate-section">
+        <label>車牌號碼</label>
+        <input
+          id="f-plate"
+          type="text"
+          placeholder="依時間規則顯示">
+
+        <div
+          id="plate-hint"
+          class="page-subtitle">
         </div>
       </div>
 
@@ -1787,71 +1707,46 @@
       `;
     }
 
-    async function loadAdminRecords() {
-      if (!isAdmin()) throw new Error("您沒有管理員權限");
-      const result = await apiRequest("queryRecords", {
-        dateFrom: "2000-01-01",
-        dateTo: "2099-12-31"
-      });
-      state.records = Array.isArray(result.records) ? result.records : [];
-      return state.records;
-    }
-
-    async function refreshAdminRecords() {
-      try {
-        await loadAdminRecords();
-        render();
-        showMessage("借車紀錄已更新", "success");
-      } catch (error) {
-        showMessage(error.message, "danger");
-      }
-    }
-
     function adminPage() {
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const nextMonthStart = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
-      const currentMonthRecords = state.records.filter(record =>
-        typeof record.date === "string" && record.date >= monthStart && record.date < nextMonthStart
+      const waiting = state.records.filter(
+        record => record.status === "待派車"
       );
-      // 待派車保留跨月申請，避免遺漏尚待處理的派車工作。
-      const waiting = state.records.filter(record => record.status === "待派車");
-      const assigned = currentMonthRecords.filter(record => record.status === "已派車");
-      const reported = currentMonthRecords.filter(record => record.status === "已回報");
+
+      const assigned = state.records.filter(
+        record => record.status === "已派車"
+      );
+
+      const reported = state.records.filter(
+        record => record.status === "已回報"
+      );
 
       return `
         <div class="page-header">
           <div>
             <h1 class="page-title">管理員後台</h1>
-            <div class="page-subtitle">待派車包含所有月份；已派車、已回報及全部申請統計本月份</div>
+            <div class="page-subtitle">查看待派車申請及借車狀態</div>
           </div>
-          <button class="button button-secondary" onclick="refreshAdminRecords()">重新整理</button>
         </div>
 
         <div class="grid grid-4">
-          <div class="card stat-card" role="button" tabindex="0" onclick="go('admin')" onkeydown="if(event.key==='Enter')go('admin')">
+          <div class="card stat-card">
             <div class="stat-label">待派車</div>
             <div class="stat-value">${waiting.length}</div>
-            <div class="stat-hint">${waiting.length ? `有 ${waiting.length} 筆申請等候指派車牌，點此處理。` : '目前沒有待處理申請。'}</div>
           </div>
 
-          <div class="card stat-card" role="button" tabindex="0" onclick="go('records')" onkeydown="if(event.key==='Enter')go('records')">
+          <div class="card stat-card">
             <div class="stat-label">已派車</div>
             <div class="stat-value">${assigned.length}</div>
-            <div class="stat-hint">本月已完成派車、尚待用車的申請。</div>
           </div>
 
-          <div class="card stat-card" role="button" tabindex="0" onclick="go('records')" onkeydown="if(event.key==='Enter')go('records')">
+          <div class="card stat-card">
             <div class="stat-label">已回報</div>
             <div class="stat-value">${reported.length}</div>
-            <div class="stat-hint">本月已完成回程里程回報的紀錄。</div>
           </div>
 
-          <div class="card stat-card" role="button" tabindex="0" onclick="go('records')" onkeydown="if(event.key==='Enter')go('records')">
+          <div class="card stat-card">
             <div class="stat-label">全部申請</div>
-            <div class="stat-value">${currentMonthRecords.length}</div>
-            <div class="stat-hint">本月借車申請總筆數；點此查看完整借車紀錄。</div>
+            <div class="stat-value">${state.records.length}</div>
           </div>
         </div>
 
@@ -1860,7 +1755,7 @@
 
           ${
             waiting.length
-              ? `<ul class="record-list">${waiting.map(recordListItem).join("")}</ul>`
+              ? waiting.map(recordCard).join("")
               : `<div class="empty">目前沒有待派車申請。</div>`
           }
         </div>
@@ -1877,27 +1772,8 @@
         </div>
 
         <div class="card">
-          ${state.records.length
-            ? `<ul class="record-list">${state.records.map(recordListItem).join("")}</ul>`
-            : `<div class="empty">目前沒有借車紀錄。</div>`}
+          ${state.records.map(recordCard).join("")}
         </div>
-      `;
-    }
-
-    function recordListItem(record) {
-      return `
-        <li class="record-list-item" onclick="viewRecord('${escapeHtml(record.borrowId)}')" title="點選查看詳情">
-          <div class="record-list-main">
-            <div class="record-title">${escapeHtml(record.date)}　${escapeHtml(record.driver)}</div>
-            <div class="record-list-meta">${escapeHtml(record.department)} ・ ${escapeHtml(record.startTime)}～${escapeHtml(record.endTime)} ・ ${escapeHtml(record.location)} ・ 車牌：${escapeHtml(record.plate || "尚未指派")}</div>
-          </div>
-          <div class="record-list-actions" onclick="event.stopPropagation()">
-            ${statusHtml(record.status)}
-            ${isAdmin() && (record.status === "待派車" || record.status === "已派車")
-              ? `<button class="button button-primary" onclick="assignPlate('${escapeHtml(record.borrowId)}')">${record.status === "待派車" ? "指派車牌" : "修改派車"}</button>`
-              : ""}
-          </div>
-        </li>
       `;
     }
 
@@ -2033,18 +1909,9 @@
                        <strong>實際回程時間</strong><br>
                        ${escapeHtml(record.mileageTime || "尚未回報")}
                   </div>
-
-                  <div class="detail-note">
-                    <strong>備註</strong><br>
-                    ${escapeHtml(record.note || "無")}
-                  </div>
                 `
             }
           </div>
-
-          ${!guest && isAdmin() && (record.status === "待派車" || record.status === "已派車")
-            ? `<div class="form-actions"><button class="button button-primary" onclick="assignPlate('${escapeHtml(record.borrowId)}')">${record.status === "待派車" ? "指派車牌" : "修改派車"}</button></div>`
-            : ""}
 
           ${
             !guest &&
@@ -2061,9 +1928,6 @@
               `
               : ""
           }
-          ${!guest && record.status === "已回報" && isAdmin()
-            ? `<div class="notice notice-info">已回報回程里程，此派車資料已鎖定，不能修改。</div>`
-            : ""}
         </div>
       `;
     }
@@ -2255,12 +2119,13 @@
                 <th>地點</th>
                 <th>車牌</th>
                 <th>狀態</th>
+                <th>操作</th>
               </tr>
             </thead>
 
             <tbody>
               ${records.map(record => `
-                <tr class="clickable-row" onclick="viewRecord('${escapeHtml(record.borrowId)}')" title="點選查看詳情">
+                <tr>
                   <td>${escapeHtml(record.date)}</td>
                   <td>${escapeHtml(record.driver)}</td>
                   <td>${escapeHtml(record.department)}</td>
@@ -2271,6 +2136,13 @@
                   <td>${escapeHtml(record.location)}</td>
                   <td>${escapeHtml(record.plate || "尚未指派")}</td>
                   <td>${statusHtml(record.status)}</td>
+                  <td>
+                    <button
+                      class="button button-light"
+                      onclick="viewRecord('${escapeHtml(record.borrowId)}')">
+                      查看
+                    </button>
+                  </td>
                 </tr>
               `).join("")}
             </tbody>
@@ -2278,28 +2150,7 @@
         </div>
 
         <div class="mobile-records">
-          ${records.map(searchRecordCard).join("")}
-        </div>
-      `;
-    }
-
-    function searchRecordCard(record) {
-      return `
-        <div class="record-card search-record-card" role="button" tabindex="0"
-             onclick="viewRecord('${escapeHtml(record.borrowId)}')"
-             onkeydown="if(event.key==='Enter')viewRecord('${escapeHtml(record.borrowId)}')"
-             title="點選查看詳情">
-          <div class="record-top">
-            <div>
-              <div class="record-title">${escapeHtml(record.date)}　${escapeHtml(record.driver)}</div>
-              <div class="record-info">
-                ${escapeHtml(record.department)}<br>
-                ${escapeHtml(record.startTime)}～${escapeHtml(record.endTime)} ／ ${escapeHtml(record.location)}<br>
-                車牌：${escapeHtml(record.plate || "尚未指派")}
-              </div>
-            </div>
-            <div>${statusHtml(record.status)}</div>
-          </div>
+          ${records.map(recordCard).join("")}
         </div>
       `;
     }
@@ -2327,10 +2178,6 @@
           plate: plate.trim()
         });
 
-        if (result.record) {
-          state.records = state.records.map(item => item.borrowId === borrowId ? result.record : item);
-          if (state.selectedRecord?.borrowId === borrowId) state.selectedRecord = result.record;
-        }
         render();
         showMessage(result.message, "success");
       } catch (error) {
