@@ -1,628 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>公務車借用申請</title>
+<!-- 請將 YOUR_LIFF_ID 替換為您的 LIFF App ID -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f0;min-height:100vh}
+  .app{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column}
+
+  /* Header */
+  .header{background:#06C755;padding:16px 20px;color:#fff;display:flex;align-items:center;gap:10px}
+  .header-icon{width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .header h1{font-size:17px;font-weight:700;letter-spacing:.3px}
+  .header p{font-size:12px;opacity:.85;margin-top:2px}
+
+  /* Progress */
+  .progress{height:3px;background:#e8e8e8}
+  .progress-bar{height:100%;background:#06C755;transition:width .4s ease;width:33%}
+
+  /* Body */
+  .form-body{padding:20px;flex:1;overflow-y:auto;padding-bottom:100px}
+  .section-label{font-size:11px;font-weight:700;color:#06C755;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px}
+
+  /* Fields */
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;color:#555;margin-bottom:6px;font-weight:500}
+  .field label .req{color:#e53935;margin-left:2px}
+  .field input,
+  .field select,
+  .field textarea{
+    width:100%;padding:12px 14px;
+    border:1.5px solid #e0e0e0;border-radius:10px;
+    font-size:15px;font-family:inherit;
+    background:#fafafa;color:#222;
+    outline:none;transition:border-color .2s,background .2s;
+    -webkit-appearance:none;appearance:none
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:#06C755;background:#fff}
+  .field textarea{resize:none;height:76px;line-height:1.5}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  /* Stepper */
+  .stepper{display:flex;align-items:center;border:1.5px solid #e0e0e0;border-radius:10px;overflow:hidden;background:#fafafa}
+  .stepper button{width:48px;height:48px;border:none;background:none;font-size:22px;color:#06C755;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .stepper button:active{background:#f0faf3}
+  .stepper span{flex:1;text-align:center;font-size:16px;font-weight:600;color:#222}
+
+
+
+  /* Steps */
+  .step{display:none}
+  .step.active{display:block}
+
+  /* Footer */
+  .footer{position:fixed;bottom:0;left:0;right:0;padding:14px 20px 24px;background:#fff;border-top:1px solid #f0f0f0;max-width:480px;margin:0 auto}
+  .step-nav{display:flex;gap:10px}
+  .btn-back{flex:1;padding:14px;background:#f5f5f0;color:#555;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer}
+  .btn-next{flex:2;padding:14px;background:#06C755;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .btn-next:active{opacity:.85}
+
+  /* Info hint */
+  .info-hint{font-size:12px;color:#06C755;margin-top:8px;display:flex;align-items:center;gap:4px;line-height:1.5}
+  .info-hint svg{flex-shrink:0}
+
+  /* Success */
+  .success{display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 32px;text-align:center;flex:1}
+  .success.show{display:flex}
+  .success-icon{width:80px;height:80px;background:#e8f8ee;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+  .success h2{font-size:22px;font-weight:700;color:#222;margin-bottom:10px}
+  .success p{font-size:14px;color:#888;line-height:1.8}
+
+  /* Plate input (auto-appear) */
+  .plate-section{display:none;margin-top:16px;padding:16px;background:#fffde7;border-radius:12px;border:1.5px solid #ffe082}
+  .plate-section.show{display:block}
+  .plate-section p{font-size:13px;color:#795548;margin-bottom:10px;font-weight:500}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="header">
+    <div class="header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+        <rect x="1" y="3" width="15" height="13" rx="2"/>
+        <path d="M16 8h4l3 5v3h-7"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <div>
+      <h1>公務車借用申請</h1>
+      <p id="step-hint">步驟 1／3 — 填寫基本資料</p>
+    </div>
+  </div>
+  <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+
+  <div class="form-body">
+
+    <!-- Step 1: 申請人資料 -->
+    <div class="step active" id="step1">
+      <div class="section-label">申請人資料</div>
+      <div class="field">
+        <label>工號 <span class="req">*</span></label>
+        <input type="text" id="emp-id" placeholder="例：A12345">
+      </div>
+      <div class="field">
+        <label>駕駛人姓名 <span class="req">*</span></label>
+        <input type="text" id="driver" placeholder="請輸入中文姓名">
+      </div>
+      <div class="field">
+        <label>部門 <span class="req">*</span></label>
+        <input type="text" id="dept" placeholder="例：管理部">
+      </div>
+    </div>
+
+    <!-- Step 2: 用車時間 -->
+    <div class="step" id="step2">
+      <div class="section-label">用車時間與人數</div>
+      <div class="field">
+        <label>借用日期 <span class="req">*</span></label>
+        <input type="date" id="borrow-date">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>出發時間 <span class="req">*</span></label>
+          <input type="time" id="start-time">
+        </div>
+        <div class="field">
+          <label>預計返回 <span class="req">*</span></label>
+          <input type="time" id="end-time">
+        </div>
+      </div>
+      <div class="field">
+        <label>乘車人數（含駕駛）</label>
+        <div class="stepper">
+          <button type="button" onclick="adj(-1)">−</button>
+          <span id="pax-val">1</span>
+          <button type="button" onclick="adj(1)">＋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: 事由與車牌 -->
+    <div class="step" id="step3">
+      <div class="section-label">借用事由</div>
+      <div class="field">
+        <label>借用事由 <span class="req">*</span></label>
+        <input type="text" id="reason-input" placeholder="例：銀行、開會…">
+      </div>
+      <div class="field">
+        <label>目的地 <span class="req">*</span></label>
+        <input type="text" id="location" placeholder="例：台南">
+      </div>
+      <div class="field">
+        <label>備註</label>
+        <textarea id="note" placeholder="其他說明（選填）"></textarea>
+      </div>
+
+      <!-- 若 30 分鐘內用車，自動出現車牌欄位 -->
+      <div class="plate-section" id="plate-section">
+        <p>⚡ 您的用車時間在 30 分鐘內，請直接填入車牌或聯絡管理部：</p>
+        <div class="field" style="margin:0">
+          <input type="text" id="plate-input" placeholder="例：ABC-1234（英文大寫）" style="text-transform:uppercase">
+        </div>
+      </div>
+
+      <div class="info-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06C755" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        若用車時間在申請後 30 分鐘內，系統將讓您自行填入車牌
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div class="success" id="success-view">
+      <div class="success-icon">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#06C755" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>申請已送出！</h2>
+      <p>您的借車申請已成功登記<br>管理員將盡快為您安排車輛<br>派車後將透過 LINE 訊息通知您</p>
+    </div>
+
+  </div><!-- /form-body -->
+
+  <div class="footer" id="footer">
+    <div id="nav1" class="step-nav">
+      <button class="btn-next" style="flex:1" onclick="goStep(2)">下一步 →</button>
+    </div>
+    <div id="nav2" class="step-nav" style="display:none">
+      <button class="btn-back" onclick="goStep(1)">← 上一步</button>
+      <button class="btn-next" onclick="goStep(3)">下一步 →</button>
+    </div>
+    <div id="nav3" class="step-nav" style="display:none">
+      <button class="btn-back" onclick="goStep(2)">← 上一步</button>
+      <button class="btn-next" onclick="submitForm()" id="submit-btn">送出申請</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
 <script>
 // ==========================================
-// 設定區
+// 設定區 — 請修改這兩個值
 // ==========================================
-const LIFF_ID = '2007826582-3tKuGAUu';
-
-const GAS_URL =
-  'https://script.google.com/macros/s/AKfycbwz1QAtyd7k9ErQZr1ICx6xS-4ieeulPmKOtEf4w4uUE8CyKAtQCbhD5BXP4YzVoKWl/exec';
-
-const LINE_LOGIN_CHANNEL_ID =
-  '2007826766';
-
-const LINE_LOGIN_REDIRECT_URI =
-  GAS_URL;
-
+const LIFF_ID = '2007826582-3tKuGAUu';           // 替換為您的 LIFF App ID
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz1QAtyd7k9ErQZr1ICx6xS-4ieeulPmKOtEf4w4uUE8CyKAtQCbhD5BXP4YzVoKWl/exec';   // 替換為您的 GAS Web App URL
 // ==========================================
-// 全域變數
-// ==========================================
+
 let pax = 1;
 let currentStep = 1;
 let userId = '';
-let liffReady = false;
 
-// ==========================================
-// 產生每位使用者專屬的 localStorage Key
-// ==========================================
-function getUserPrefsKey() {
-  if (userId) {
-    return 'car_user_prefs_' + userId;
-  }
-
-  return 'car_user_prefs';
-}
-
-// ==========================================
-// 將資料填入表單
-// ==========================================
-function applySavedUserData(saved) {
-  if (!saved) return;
-
-  const empIdInput = document.getElementById('emp-id');
-  const driverInput = document.getElementById('driver');
-  const deptInput = document.getElementById('dept');
-
-  if (saved.empId && empIdInput && !empIdInput.value) {
-    empIdInput.value = saved.empId;
-  }
-
-  if (saved.driver && driverInput && !driverInput.value) {
-    driverInput.value = saved.driver;
-  }
-
-  if (saved.dept && deptInput && !deptInput.value) {
-    deptInput.value = saved.dept;
-  }
-}
-
-// ==========================================
-// 頁面一開啟時，先載入一般暫存資料
-// 即使 LIFF 還沒有完成，也可以先帶入工號、姓名、部門
-// ==========================================
-function loadGeneralSavedUserData() {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem('car_user_prefs') || '{}'
-    );
-
-    applySavedUserData(saved);
-
-  } catch (error) {
-    console.error('載入一般暫存資料失敗:', error);
-  }
-}
-
-// ==========================================
-// 取得 LINE ID 後，載入該 LINE 使用者專屬資料
-// ==========================================
-function loadLineUserData() {
-  if (!userId) return;
-
-  try {
-    const key = getUserPrefsKey();
-    const saved = JSON.parse(
-      localStorage.getItem(key) || '{}'
-    );
-
-    applySavedUserData(saved);
-
-  } catch (error) {
-    console.error('載入 LINE 使用者資料失敗:', error);
-  }
-}
-
-// ==========================================
-// 儲存工號、姓名、部門
-// 同時儲存一般資料及 LINE 專屬資料
-// ==========================================
-function saveUserData() {
-  const data = {
-    empId: document.getElementById('emp-id').value.trim(),
-    driver: document.getElementById('driver').value.trim(),
-    dept: document.getElementById('dept').value.trim()
-  };
-
-  try {
-    // 一般資料：LIFF 尚未取得 LINE ID 時，下次仍可先帶入
-    localStorage.setItem(
-      'car_user_prefs',
-      JSON.stringify(data)
-    );
-
-    // LINE 專屬資料：避免不同使用者共用同一組資料
-    if (userId) {
-      localStorage.setItem(
-        'car_user_prefs_' + userId,
-        JSON.stringify(data)
-      );
-    }
-
-  } catch (error) {
-    console.error('儲存使用者資料失敗:', error);
-  }
-}
-
-// ==========================================
-// 判斷 LINE userId 是否有效
-// 正常 LINE userId 會以 U 開頭，後面為英數字
-// ==========================================
-function isValidLineUserId(id) {
-  return typeof id === 'string' &&
-    /^U[0-9a-z]+$/i.test(id) &&
-    id !== 'U_test_preview';
-}
-
-// ==========================================
 // 初始化 LIFF
-// ==========================================
 async function initLiff() {
-  // 先載入暫存資料
-  // 這樣即使 LIFF 尚未登入，工號、姓名、部門仍可先自動填入
-  loadGeneralSavedUserData();
-
   try {
-    console.log('開始初始化 LIFF');
-
-    await liff.init({
-      liffId: LIFF_ID
-    });
-
-    console.log('LIFF 初始化完成');
-    console.log('是否在 LINE App 內:', liff.isInClient());
-    console.log('目前是否已登入:', liff.isLoggedIn());
-
-    // 尚未登入時，導向 LINE Login
-    // 一定要 return，避免尚未登入完成就執行 getProfile()
-    if (!liff.isLoggedIn()) {
-      console.log('尚未登入，開始 LINE Login');
-      liff.login();
-      return;
-    }
-
-    // 取得 LINE 使用者資料
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) liff.login();
     const profile = await liff.getProfile();
-
-    if (!profile || !profile.userId) {
-      throw new Error('LINE Profile 中沒有 userId');
-    }
-
     userId = profile.userId;
 
-    if (!isValidLineUserId(userId)) {
-      throw new Error('取得到的 LINE userId 格式無效');
-    }
-
-    liffReady = true;
-
-    console.log('LINE userId 取得成功:', userId);
-
-    // 取得 LINE ID 後，載入此使用者專屬資料
-    loadLineUserData();
-
-  } catch (error) {
-    console.error('LIFF 初始化或取得 LINE ID 失敗:', error);
-
-    userId = '';
-    liffReady = false;
-
-    // 不清除已經自動填入的工號、姓名、部門
-    // 但不能使用測試 ID 送出正式申請
-    alert(
-      '目前無法確認您的 LINE 身分。\n\n' +
-      '工號、姓名和部門資料仍可填寫，' +
-      '但請重新從 LINE 官方帳號開啟借車功能後再送出。'
-    );
+    // 自動填入已儲存的工號、部門（如有）
+    const saved = JSON.parse(localStorage.getItem('car_user_prefs') || '{}');
+    if (saved.empId) document.getElementById('emp-id').value = saved.empId;
+    if (saved.driver) document.getElementById('driver').value = saved.driver;
+    if (saved.dept) document.getElementById('dept').value = saved.dept;
+  } catch(e) {
+    console.log('LIFF init failed:', e);
+    // 本機測試模式
+    userId = 'U_test_preview';
   }
 }
 
-// ==========================================
 // 日期下限設為今天
-// ==========================================
-document.getElementById('borrow-date').min =
-  new Date().toISOString().split('T')[0];
+document.getElementById('borrow-date').min = new Date().toISOString().split('T')[0];
 
-// ==========================================
 // 乘車人數調整
-// ==========================================
 function adj(d) {
   pax = Math.max(1, Math.min(15, pax + d));
-
   document.getElementById('pax-val').textContent = pax;
 }
 
-// ==========================================
 // 步驟切換
-// ==========================================
 function goStep(n) {
-  if (n > currentStep && !validate(currentStep)) {
-    return;
-  }
-
-  document
-    .getElementById('step' + currentStep)
-    .classList.remove('active');
-
-  document
-    .getElementById('nav' + currentStep)
-    .style.display = 'none';
-
+  if (n > currentStep && !validate(currentStep)) return;
+  document.getElementById('step' + currentStep).classList.remove('active');
+  document.getElementById('nav' + currentStep).style.display = 'none';
   currentStep = n;
+  document.getElementById('step' + n).classList.add('active');
+  document.getElementById('nav' + n).style.display = 'flex';
 
-  document
-    .getElementById('step' + n)
-    .classList.add('active');
+  const hints = ['填寫基本資料', '設定用車時間', '說明借用事由'];
+  document.getElementById('step-hint').textContent = '步驟 ' + n + '／3 — ' + hints[n - 1];
+  document.getElementById('progress-bar').style.width = (n / 3 * 100) + '%';
 
-  document
-    .getElementById('nav' + n)
-    .style.display = 'flex';
-
-  const hints = [
-    '填寫基本資料',
-    '設定用車時間',
-    '說明借用事由'
-  ];
-
-  document.getElementById('step-hint').textContent =
-    '步驟 ' + n + '/3 — ' + hints[n - 1];
-
-  document.getElementById('progress-bar').style.width =
-    (n / 3 * 100) + '%';
-
-  // 進入第三步時，檢查是否需要顯示車牌欄位
-  if (n === 3) {
-    checkPlateNeeded();
-  }
+  // 進入步驟3時，檢查是否需要顯示車牌欄
+  if (n === 3) checkPlateNeeded();
 }
 
-// ==========================================
 // 檢查用車時間是否在 30 分鐘內
-// ==========================================
 function checkPlateNeeded() {
-  const dateVal =
-    document.getElementById('borrow-date').value;
-
-  const timeVal =
-    document.getElementById('start-time').value;
-
-  if (!dateVal || !timeVal) {
-    return;
-  }
-
-  const borrowTime =
-    new Date(dateVal + 'T' + timeVal);
-
+  const dateVal = document.getElementById('borrow-date').value;
+  const timeVal = document.getElementById('start-time').value;
+  if (!dateVal || !timeVal) return;
+  const borrowTime = new Date(dateVal + 'T' + timeVal);
   const now = new Date();
-
-  const diffMin =
-    (borrowTime - now) / 60000;
-
-  // -5 到 30 分鐘內，視為即時用車
-  const isImmediate =
-    diffMin > -5 && diffMin < 30;
-
-  document
-    .getElementById('plate-section')
-    .classList.toggle('show', isImmediate);
+  const diffMin = (borrowTime - now) / 60000;
+  // -5 ~ 30 分鐘內視為即時用車
+  const isImmediate = diffMin > -5 && diffMin < 30;
+  document.getElementById('plate-section').classList.toggle('show', isImmediate);
 }
 
-// ==========================================
-// 表單欄位驗證
-// ==========================================
+// 驗證每步
 function validate(s) {
   if (s === 1) {
-    if (!document.getElementById('emp-id').value.trim()) {
-      alert('請輸入工號');
-      return false;
-    }
-
-    if (!document.getElementById('driver').value.trim()) {
-      alert('請輸入駕駛人姓名');
-      return false;
-    }
-
-    if (!document.getElementById('dept').value.trim()) {
-      alert('請輸入部門');
-      return false;
-    }
+    if (!document.getElementById('emp-id').value.trim()) { alert('請輸入工號'); return false; }
+    if (!document.getElementById('driver').value.trim()) { alert('請輸入駕駛人姓名'); return false; }
+    if (!document.getElementById('dept').value) { alert('請選擇部門'); return false; }
   }
-
   if (s === 2) {
-    if (!document.getElementById('borrow-date').value) {
-      alert('請選擇借用日期');
-      return false;
-    }
-
-    if (!document.getElementById('start-time').value) {
-      alert('請輸入出發時間');
-      return false;
-    }
-
-    if (!document.getElementById('end-time').value) {
-      alert('請輸入預計返回時間');
-      return false;
-    }
+    if (!document.getElementById('borrow-date').value) { alert('請選擇借用日期'); return false; }
+    if (!document.getElementById('start-time').value) { alert('請輸入出發時間'); return false; }
+    if (!document.getElementById('end-time').value) { alert('請輸入預計返回時間'); return false; }
   }
-
   if (s === 3) {
-    const reason =
-      document.getElementById('reason-input').value.trim();
-
-    if (!reason) {
-      alert('請輸入借用事由');
-      return false;
-    }
-
-    if (!document.getElementById('location').value.trim()) {
-      alert('請輸入目的地');
-      return false;
-    }
+    const r = document.getElementById('reason-input').value.trim();
+    if (!r) { alert('請輸入借用事由'); return false; }
+    if (!document.getElementById('location').value.trim()) { alert('請輸入目的地'); return false; }
   }
-
   return true;
 }
 
-// ==========================================
 // 送出申請
-// ==========================================
 async function submitForm() {
-  // 先確認第三步資料
-  if (!validate(3)) {
-    return;
-  }
+  if (!validate(3)) return;
 
-  // 送出前強制確認有效 LINE ID
-  // 不再使用 U_test_preview
- if (!liffReady || !isValidLineUserId(userId)) {
-  const confirmed = confirm(
-    '提醒：目前未取得您的 LINE 使用者 ID。\n\n' +
-    '仍可送出借車申請，但可能會有以下影響：\n' +
-    '1. 管理員可能無法透過 LINE 通知您\n' +
-    '2. 派車通知可能無法送達\n' +
-    '3. 回報里程按鈕可能無法使用\n\n' +
-    '是否仍要送出？'
-  );
-
-  if (!confirmed) {
-    return;
-  }
-}
-
-  const submitBtn =
-    document.getElementById('submit-btn');
-
+  const submitBtn = document.getElementById('submit-btn');
   submitBtn.textContent = '送出中...';
   submitBtn.disabled = true;
 
-  const dateVal =
-    document.getElementById('borrow-date').value;
-
-  const timeVal =
-    document.getElementById('start-time').value;
-
-  const borrowTime =
-    new Date(dateVal + 'T' + timeVal);
-
+  const dateVal = document.getElementById('borrow-date').value;
+  const timeVal = document.getElementById('start-time').value;
+  const borrowTime = new Date(dateVal + 'T' + timeVal);
   const now = new Date();
+  const diffMin = (borrowTime - now) / 60000;
+  const isImmediate = diffMin > -5 && diffMin < 30;
 
-  const diffMin =
-    (borrowTime - now) / 60000;
+  const finalReason = document.getElementById('reason-input').value.trim();
 
-  const isImmediate =
-    diffMin > -5 && diffMin < 30;
+  const plateInput = document.getElementById('plate-input').value.trim().toUpperCase();
 
-  const finalReason =
-    document.getElementById('reason-input').value.trim();
-
-  const plateInput =
-    document.getElementById('plate-input').value
-      .trim()
-      .toUpperCase();
-
-  // 儲存下次自動帶入的資料
-  saveUserData();
+  // 儲存使用者偏好（下次自動帶入）
+  localStorage.setItem('car_user_prefs', JSON.stringify({
+    empId: document.getElementById('emp-id').value.trim(),
+    driver: document.getElementById('driver').value.trim(),
+    dept: document.getElementById('dept').value.trim()
+  }));
 
   const payload = {
     source: 'liff',
-
-    // 真正的 LINE userId
     userId: userId,
-
-    empId:
-      document.getElementById('emp-id').value.trim(),
-
-    driver:
-      document.getElementById('driver').value.trim(),
-
-    dept:
-      document.getElementById('dept').value.trim(),
-
+    empId: document.getElementById('emp-id').value.trim(),
+    driver: document.getElementById('driver').value.trim(),
+    dept: document.getElementById('dept').value,
     borrowDate: dateVal,
-
     startTime: timeVal,
-
-    endTime:
-      document.getElementById('end-time').value,
-
+    endTime: document.getElementById('end-time').value,
     pax: pax,
-
     reason: finalReason,
-
-    location:
-      document.getElementById('location').value.trim(),
-
-    note:
-      document.getElementById('note').value.trim(),
-
-    plate:
-      isImmediate && plateInput
-        ? plateInput
-        : '',
-
-    status:
-      isImmediate && plateInput
-        ? '已派車(自行輸入)'
-        : '待派車'
+    location: document.getElementById('location').value.trim(),
+    note: document.getElementById('note').value.trim(),
+    plate: (isImmediate && plateInput) ? plateInput : '',
+    status: (isImmediate && plateInput) ? '已派車(自行輸入)' : '待派車'
   };
 
-  console.log('準備送出的資料:', payload);
-
   try {
-    const response = await fetch(GAS_URL, {
+    await fetch(GAS_URL, {
       method: 'POST',
       body: JSON.stringify(payload)
     });
 
-    // fetch 本身不一定會因為 GAS 回傳錯誤而進入 catch，
-    // 因此這裡只要請求完成，就依原本流程顯示成功。
-    // 若你的 GAS 有回傳 JSON 狀態，也可以再增加 response.json() 判斷。
-    console.log('申請已送出，HTTP 狀態:', response.status);
-
     // 顯示成功畫面
-    document
-      .getElementById('step3')
-      .classList.remove('active');
-
-    document
-      .getElementById('nav3')
-      .style.display = 'none';
-
-    document
-      .getElementById('success-view')
-      .classList.add('show');
-
-    document
-      .getElementById('progress-bar')
-      .style.width = '100%';
-
-    document
-      .getElementById('step-hint')
-      .textContent = '申請完成';
-
-    document
-      .getElementById('footer')
-      .style.display = 'none';
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('nav3').style.display = 'none';
+    document.getElementById('success-view').classList.add('show');
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('step-hint').textContent = '申請完成';
+    document.getElementById('footer').style.display = 'none';
 
     // 3 秒後關閉 LIFF
     setTimeout(() => {
-      try {
-        if (typeof liff !== 'undefined' &&
-            liff.isInClient()) {
-          liff.closeWindow();
-        }
-      } catch (error) {
-        console.log('關閉 LIFF 視窗失敗:', error);
-      }
+      if (liff.isInClient()) liff.closeWindow();
     }, 3000);
 
-  } catch (error) {
-    console.error('送出申請失敗:', error);
-
+  } catch(e) {
     alert('送出失敗，請稍後再試。');
-
     submitBtn.textContent = '送出申請';
     submitBtn.disabled = false;
   }
 }
 
-function loginWithLine() {
-  const state =
-    crypto.randomUUID();
-
-  sessionStorage.setItem(
-    'line_login_state',
-    state
-  );
-
-  const params =
-    new URLSearchParams({
-      response_type: 'code',
-      client_id: LINE_LOGIN_CHANNEL_ID,
-      redirect_uri:
-        LINE_LOGIN_REDIRECT_URI,
-      state: state,
-      scope: 'profile openid'
-    });
-
-  window.location.href =
-    'https://access.line.me/oauth2/v2.1/authorize?' +
-    params.toString();
-}
-
-async function handleLineLoginCallback() {
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const ticket =
-    params.get('login_ticket');
-
-  const returnedState =
-    params.get('state');
-
-  if (!ticket || !returnedState) {
-    return;
-  }
-
-  const savedState =
-    sessionStorage.getItem(
-      'line_login_state'
-    );
-
-  if (
-    !savedState ||
-    savedState !== returnedState
-  ) {
-    alert(
-      '登入驗證失敗，請重新登入。'
-    );
-    return;
-  }
-
-  try {
-    const response =
-      await fetch(GAS_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify({
-          action:
-            'exchangeLoginTicket',
-          ticket: ticket,
-          state: returnedState
-        })
-      });
-
-    const result =
-      await response.json();
-
-    if (!result.ok) {
-      throw new Error(
-        result.message || '登入失敗'
-      );
-    }
-
-    sessionStorage.removeItem(
-      'line_login_state'
-    );
-
-    /*
-     * 暫存登入資料。
-     * 後續可以改成短期 session。
-     */
-    sessionStorage.setItem(
-      'line_login_user',
-      JSON.stringify(result.user)
-    );
-
-    /*
-     * 清除網址上的 ticket，
-     * 避免重新整理時重複使用。
-     */
-    window.history.replaceState(
-      {},
-      document.title,
-      window.location.pathname
-    );
-
-    showLoggedInPage(result.user);
-
-  } catch (error) {
-    console.error(
-      '登入票券兌換失敗：',
-      error
-    );
-
-    alert(
-      'LINE 登入失敗：' +
-      error.message
-    );
-  }
-}
-
-// ==========================================
-// 啟動程式
-// ==========================================
 initLiff();
 </script>
+</body>
+</html>
